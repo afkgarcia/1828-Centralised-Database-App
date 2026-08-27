@@ -1,0 +1,9 @@
+# Caddy reverse proxy — automatic HTTPS via Let's Encrypt.
+# Replace the domain, `systemctl reload caddy`, done. Caddy redirects HTTP→HTTPS
+# and renews certificates by itself; the app sees plain HTTP on localhost and
+# sets Secure cookies because NODE_ENV=production.
+
+tracker.example.nl {
+	reverse_proxy 127.0.0.1:8028
+	encode gzip
+}

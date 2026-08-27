@@ -1,0 +1,24 @@
+# systemd unit — /etc/systemd/system/1828-tracker.service
+# sudo systemctl daemon-reload && sudo systemctl enable --now 1828-tracker
+[Unit]
+Description=1828 Fasedocument Tracker (web)
+After=network.target
+
+[Service]
+Type=simple
+User=tracker
+Group=tracker
+WorkingDirectory=/opt/1828/electron-app
+EnvironmentFile=/etc/1828-tracker.env
+ExecStart=/opt/1828/electron-app/node_modules/.bin/tsx web/server.ts
+Restart=always
+RestartSec=3
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/1828-tracker
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

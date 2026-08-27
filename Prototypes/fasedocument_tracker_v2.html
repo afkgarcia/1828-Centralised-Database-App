@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1828 — Fasedocument Tracker v2</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;font-size:14px;background:#f5f5f5;color:#222}
+  header{background:#1a1a2e;color:#fff;padding:14px 24px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;flex-wrap:wrap}
+  header h1{font-size:17px;font-weight:700;letter-spacing:.5px}
+  header .hdr-meta{font-size:13px;opacity:.7;flex:1}
+  .badge{background:#e63946;color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:700}
+  .v-badge{background:#f0c040;color:#7a5c00;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700}
+  .lang-toggle{display:flex;border:1px solid rgba(255,255,255,.3);border-radius:6px;overflow:hidden;flex-shrink:0}
+  .lang-btn{padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;border:none;color:rgba(255,255,255,.6);transition:all .15s}
+  .lang-btn.active{background:rgba(255,255,255,.2);color:#fff}
+  .container{max-width:1180px;margin:0 auto;padding:24px 16px}
+
+  /* Setup */
+  .setup-card{background:#fff;border-radius:12px;padding:40px;max-width:560px;margin:40px auto;box-shadow:0 2px 12px rgba(0,0,0,.1)}
+  .setup-card h2{font-size:20px;margin-bottom:8px;color:#1a1a2e}
+  .setup-card p{color:#666;margin-bottom:28px;font-size:14px}
+  .field{margin-bottom:20px}
+  .field label{display:block;font-weight:600;margin-bottom:6px;font-size:13px;color:#444}
+  .field select,.field input{width:100%;border:1px solid #ddd;border-radius:6px;padding:10px 12px;font-size:14px;outline:none}
+  .field select:focus,.field input:focus{border-color:#1a1a2e}
+  .btn{background:#1a1a2e;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s}
+  .btn:hover{background:#2d2d4e}
+  .btn.outline{background:transparent;color:#1a1a2e;border:2px solid #1a1a2e}
+  .btn.outline:hover{background:#f0f0f0}
+  .btn.success{background:#2a9d8f}
+  .btn.success:hover{background:#21867a}
+  .btn.danger{background:#c0392b}
+  .btn.danger:hover{background:#a13226}
+  .btn.tiny{padding:5px 10px;font-size:12px;border-radius:6px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+
+  /* Layout */
+  .layout{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start}
+  .sidebar{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.08);position:sticky;top:70px;max-height:calc(100vh - 90px);overflow-y:auto}
+  .sidebar-section{border-bottom:1px solid #eee}
+  .sidebar-header{background:#1a1a2e;color:#fff;padding:11px 16px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .sidebar-header.cities{background:#0e7490}
+  .sidebar-header.projects{background:#1a1a2e}
+  .add-pill{background:rgba(255,255,255,.18);color:#fff;border:none;border-radius:14px;padding:2px 10px;font-size:11px;font-weight:700;cursor:pointer}
+  .add-pill:hover{background:rgba(255,255,255,.32)}
+  .sb-item{padding:10px 16px;border-bottom:1px solid #f5f5f5;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s}
+  .sb-item:hover{background:#f8f8f8}
+  .sb-item.active{background:#eef2ff;border-left:3px solid #1a1a2e}
+  .sb-item.active.city{border-left-color:#0e7490;background:#ecfeff}
+  .sb-name{flex:1;font-size:13px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sb-count{font-size:11px;color:#999}
+  .progress-bar{height:3px;background:#e0e0e0;border-radius:2px;margin-top:3px;overflow:hidden}
+  .progress-bar .fill{height:100%;background:#2a9d8f;border-radius:2px;transition:width .3s}
+  .progress-bar .fill.city{background:#0e7490}
+  .sb-empty{padding:14px 16px;color:#999;font-size:12px;font-style:italic}
+
+  /* Main */
+  .main{background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,.08);overflow:hidden}
+  .crumbs{padding:10px 24px 0;font-size:12px;color:#888}
+  .crumbs strong{color:#444}
+  .phase-header{padding:16px 24px;border-bottom:1px solid #eee;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .phase-header h2{font-size:17px;font-weight:700;color:#1a1a2e}
+  .phase-header .meta{font-size:12px;color:#888;margin-top:3px}
+  .phase-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+  /* Phase tabs (inside a project) */
+  .phase-tabs{display:flex;gap:4px;padding:10px 18px;background:#fafafa;border-bottom:1px solid #eee;overflow-x:auto;flex-wrap:wrap}
+  .ptab{border:1px solid #ddd;background:#fff;border-radius:18px;padding:6px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:all .15s}
+  .ptab:hover:not(.locked){background:#f0f0f0}
+  .ptab.active{background:#1a1a2e;color:#fff;border-color:#1a1a2e}
+  .ptab.locked{opacity:.45;cursor:not-allowed}
+  .ptab.approved{background:#e8f8f4;border-color:#2a9d8f;color:#1d6f63}
+  .ptab.approved.active{background:#2a9d8f;color:#fff}
+  .ptab .pdot{font-size:11px}
+
+  .role-bar{padding:8px 24px;background:#f9f9f9;border-bottom:1px solid #eee;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .role-bar-label{font-size:12px;color:#777;margin-right:2px}
+  .role-chip{border:1px solid #ddd;border-radius:14px;padding:3px 12px;font-size:12px;cursor:pointer;background:#fff;transition:all .15s}
+  .role-chip.active-chip{background:#1a1a2e;color:#fff;border-color:#1a1a2e}
+
+  /* Approval banner */
+  .approval-banner{padding:12px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .approval-banner.ready{background:#fff8e1;border-bottom:1px solid #f0c040}
+  .approval-banner.submitted{background:#fef3c7;border-bottom:1px solid #f59e0b}
+  .approval-banner.approved{background:#ecfdf5;border-bottom:1px solid #2a9d8f}
+  .approval-banner .ab-text{flex:1;font-size:13px;color:#444}
+  .approval-banner .ab-text strong{color:#1a1a2e}
+
+  /* Blok */
+  .blok-group{border-bottom:1px solid #f0f0f0}
+  .blok-header{padding:9px 24px;background:#f5f7ff;font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:8px}
+  .blok-step{background:#1a1a2e;color:#fff;border-radius:4px;padding:1px 7px;font-size:11px}
+  .blok-reorder{display:none;gap:4px;margin-left:auto;align-items:center}
+  .admin-mode .blok-reorder{display:flex}
+  .add-row-btn{background:#fff;border:1px dashed #aaa;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;color:#444;font-weight:600}
+  .add-row-btn:hover{background:#f0f0f0;border-color:#1a1a2e}
+
+  /* Tasks: tri-state */
+  .task-row{display:grid;grid-template-columns:auto 1fr 240px auto;align-items:start;gap:12px;padding:11px 24px;border-bottom:1px solid #f5f5f5;transition:background .1s}
+  .task-row:hover{background:#fafafa}
+  .task-row.done{background:#f0fdf4}
+  .task-row.done .task-name{color:#888;text-decoration:line-through}
+  .task-row.na{background:#f5f5f5;opacity:.62}
+  .task-row.na .task-name{color:#999;text-decoration:line-through;font-style:italic}
+  .task-row.na .task-rasci{opacity:.5}
+  .task-row.na .task-link-wrap input{background:#eee;color:#888}
+  .task-row.custom{background:#fff8ee}
+  .task-row.custom.done{background:#f0fdf4}
+  .task-row.custom.na{background:#f5f5f5}
+
+  .tri-cell{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:42px;padding-top:1px}
+  .tri-btn{width:22px;height:22px;border-radius:4px;border:2px solid #ccc;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:#fff;transition:all .15s;color:#999}
+  .tri-btn.checked{background:#2a9d8f;border-color:#2a9d8f;color:#fff}
+  .tri-btn.na{background:#999;border-color:#999;color:#fff}
+  .na-toggle{font-size:9px;color:#888;cursor:pointer;border:1px solid #ccc;border-radius:9px;padding:1px 6px;background:#fff;font-weight:600;letter-spacing:.3px}
+  .na-toggle.on{background:#999;color:#fff;border-color:#777}
+  .na-toggle:hover{border-color:#1a1a2e}
+
+  .task-name{font-size:13px;font-weight:500}
+  .custom-tag{display:inline-block;background:#f0c040;color:#5a4400;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:6px;letter-spacing:.4px}
+  .task-rasci{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap;align-items:center}
+  .rasci-tag{font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700}
+  .rasci-R{background:#fce4ec;color:#c62828}
+  .rasci-A{background:#e3f2fd;color:#1565c0}
+  .rasci-S{background:#e8f5e9;color:#2e7d32}
+  .rasci-C{background:#fff8e1;color:#f57f17}
+  .task-link-wrap input{width:100%;border:1px solid #e0e0e0;border-radius:6px;padding:6px 9px;font-size:12px;outline:none;color:#444}
+  .task-link-wrap input:focus{border-color:#1a1a2e}
+  .task-link-wrap input.filled{border-color:#2a9d8f;background:#f0fdf4}
+  .task-aside{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+  .task-reorder{display:none;flex-direction:column;gap:2px}
+  .admin-mode .task-reorder{display:flex}
+  .reorder-btn{background:none;border:none;cursor:pointer;color:#bbb;font-size:11px;padding:2px 4px;border-radius:3px;line-height:1}
+  .reorder-btn:hover{background:#eee;color:#555}
+  .delete-btn{display:none;background:none;border:none;color:#c0392b;cursor:pointer;font-size:13px;padding:2px 6px;border-radius:3px}
+  .admin-mode .task-row.custom .delete-btn{display:inline-block}
+  .delete-btn:hover{background:#fee}
+
+  /* Empty state */
+  .empty-state{padding:80px 24px;text-align:center;color:#999}
+  .empty-state .big{font-size:48px;margin-bottom:12px}
+  .empty-state h3{font-size:16px;color:#666;margin-bottom:6px}
+
+  /* Welcome / mode picker */
+  .welcome{padding:40px 24px}
+  .welcome h2{font-size:20px;color:#1a1a2e;margin-bottom:6px}
+  .welcome p{color:#666;font-size:14px;margin-bottom:18px}
+  .picker{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pick-card{border:2px solid #eee;border-radius:10px;padding:18px;cursor:pointer;transition:all .15s;background:#fff}
+  .pick-card:hover{border-color:#1a1a2e;background:#fafafa}
+  .pick-card h3{font-size:15px;color:#1a1a2e;margin-bottom:4px}
+  .pick-card .pc-icon{font-size:28px;margin-bottom:6px}
+  .pick-card.cities:hover{border-color:#0e7490}
+  .pick-card p{font-size:12px;color:#777}
+
+  /* Export */
+  .export-panel{background:#fff;border-radius:10px;padding:16px 24px;margin-top:18px;box-shadow:0 1px 6px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .export-panel p{font-size:13px;color:#666;max-width:460px}
+  .stats{display:flex;gap:16px}
+  .stat-item .val{font-size:22px;font-weight:700;color:#1a1a2e}
+  .stat-item .lbl{font-size:11px;color:#999;text-align:center}
+  .stat-item .val.red{color:#e63946}
+  .stat-item .val.grey{color:#888}
+  .stat-item .val.green{color:#2a9d8f}
+  .admin-badge{background:#f0c040;color:#7a5c00;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700;margin-left:6px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+  .topbar-left{font-size:13px;color:#666}
+
+  /* Modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:200}
+  .modal{background:#fff;border-radius:10px;padding:22px;max-width:420px;width:90%}
+  .modal h3{font-size:16px;margin-bottom:10px;color:#1a1a2e}
+  .modal p{font-size:13px;color:#555;margin-bottom:14px}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+
+  @media(max-width:820px){
+    .layout{grid-template-columns:1fr}
+    .sidebar{position:static;max-height:none}
+    .task-row{grid-template-columns:auto 1fr;gap:8px}
+    .task-link-wrap{grid-column:1/-1;padding-left:54px}
+    .task-aside{grid-column:2;justify-self:end}
+    .picker{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>1828 · Fasedocument Tracker</h1>
+  <span class="v-badge">v2 prototype</span>
+  <span class="hdr-meta" id="hdr-meta"></span>
+  <span id="admin-badge-hdr"></span>
+  <span class="badge" id="open-count" style="display:none"></span>
+  <div class="lang-toggle">
+    <button class="lang-btn active" id="btn-nl" onclick="setLang('nl')">NL</button>
+    <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+  </div>
+</header>
+<div class="container" id="app"></div>
+<div id="modal-root"></div>
+
+<script>
+const PHASES_DATA = [{"sheet":"Gemeenteontwikkeling","tasks":[{"row":2,"step":"1.1","blok":"Selectie en beoordeling van kansrijke gemeenten","deliverable":"Bijgewerkte en verrijkte lijst met G40 steden, een geanalyseerde top 10 en een voorkeursvariant.","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"PO","opm":""},{"row":3,"step":"1.1","blok":"Selectie en beoordeling van kansrijke gemeenten","deliverable":"Onderbouwd voorstel nieuwe focusgemeente","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"PO","opm":""},{"row":4,"step":"1.1","blok":"Selectie en beoordeling van kansrijke gemeenten","deliverable":"Besluit MT tot nieuwe focusgemeente","existingLink":"","r":"OM","a":"MT","s":"","c":"","i":"PO","opm":""},{"row":6,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Werkdocument aangemaakt","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":7,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Analyse woonvisie en structuurvisie","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":8,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Analyse huisvestingsverordening en jongerenbeleid","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":9,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Ontwikkelgebieden in kaart","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":10,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Analyse sociale woningmarkt","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":11,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Analyse jongerenpopulatie","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":12,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Tenderoverzicht","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":13,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Eerste inschatting planologische kansrijkheid","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":15,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Gesprekken wethouders/beleidsafdelingen/raadsfracties","existingLink":"Link naar map met gespreksnotities","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":16,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Toetsing fit met gemeentelijke visie","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":17,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Strategische aanbeveling voortzetten","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":18,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"MT-informatiemoment voortgang","existingLink":"Link naar gespreksverslag","r":"OM","a":"MT","s":"","c":"","i":"PO","opm":""},{"row":20,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Lokale positioneringsstrategie 1828","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":21,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Aangepaste two-pager voor deze gemeente","existingLink":"Link naar two-pager","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":22,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Lokale landingspagina met inschrijfmogelijkheid","existingLink":"Link naar landingspagina","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":23,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Start woonpanel-opbouw","existingLink":"Link naar map met gespreksverslagen woonpanel","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":24,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Identificatie potentiële endorsers","existingLink":"Link naar CRM-overzicht","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":25,"step":"1.2","blok":"Voorbereiding acquisitie","deliverable":"Drie maatschappelijke partners benaderd en SOK mee afgesloten","existingLink":"Link naar lijst met maatschappelijke partners","r":"OM","a":"OM","s":"","c":"","i":"DENISE + PO","opm":""},{"row":27,"step":"1.3","blok":"Database maken","deliverable":"CRM Bigin ingericht en gestructureerd voor de gemeente.","existingLink":"Link naar CRM","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":28,"step":"1.3","blok":"Database maken","deliverable":"Minimaal 50–100 relevante contacten ingevoerd en volledig gedocumenteerd.","existingLink":"Link naar CRM-overzicht","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":29,"step":"1.3","blok":"Database maken","deliverable":"Top 20 invloedrijke spelers geïdentificeerd en geprioriteerd.","existingLink":"Stakeholderlijst","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":30,"step":"1.3","blok":"Database maken","deliverable":"Relatie-activiteiten geregistreerd en actueel gehouden.","existingLink":"Link naar CRM","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":31,"step":"1.3","blok":"Database maken","deliverable":"Invloedanalyse opgenomen in het werkdocument.","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""}]},{"sheet":"Acquisitiefase","tasks":[{"row":3,"step":"1.4","blok":"Selectie potentiële locatie(s)","deliverable":"Overzicht longlist potentiële locaties (leads tot en met afgevallen leads)","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":4,"step":"1.4","blok":"Selectie potentiële locatie(s)","deliverable":"Kadastrale kaart","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":5,"step":"1.4","blok":"Selectie potentiële locatie(s)","deliverable":"Kadastrale gegevens","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":6,"step":"1.4","blok":"Selectie potentiële locatie(s)","deliverable":"WVG van toepassing","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":7,"step":"1.4","blok":"Selectie potentiële locatie(s)","deliverable":"Verkoopvoorwaarden","existingLink":"Link naar v erkoopvoorwaarden","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":8,"step":"1.4","blok":"Selectie potentiële locatie(s)","deliverable":"Milieucirkels in kaart brengen","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":9,"step":"1.4","blok":"Selectie potentiële locatie(s)","deliverable":"Vigerend bestemmingsplan","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":10,"step":"1.4","blok":"Selectie potentiële locatie(s)","deliverable":"Beschikbaarheid elektra aansluiting","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":11,"step":"1.4","blok":"Selectie potentiële locatie(s)","deliverable":"Onderzoek overstromings-/risicokaart","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":12,"step":"1.4","blok":"Selectie potentiële locatie(s)","deliverable":"Stedenbouwkundige modellen","existingLink":"Link naar map met stedenbouwkundige modellen","r":"OM","a":"OM","s":"","c":"PO","i":"MT","opm":""},{"row":13,"step":"1.4","blok":"Selectie potentiële locatie(s)","deliverable":"Quickscan locatie","existingLink":"Quickscan document","r":"OM","a":"OM","s":"","c":"PO","i":"","opm":""},{"row":14,"step":"1.4","blok":"Selectie potentiële locatie(s)","deliverable":"Geprioriteerde shortlist","existingLink":"","r":"OM","a":"OM","s":"","c":"PO","i":"","opm":""},{"row":16,"step":"1.5","blok":"Voorbereiding contact eigenaar","deliverable":"Eigenaarprofiel opgesteld","existingLink":"","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":17,"step":"1.5","blok":"Voorbereiding contact eigenaar","deliverable":"Inschatting waarde object","existingLink":"","r":"OM","a":"OM","s":"","c":"PO","i":"","opm":""},{"row":19,"step":"1.7","blok":"Relatiebeheer/netwerken (ongoing)","deliverable":"CRM-activiteitenoverzicht","existingLink":"Bigin","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":21,"step":"1.8","blok":"Visie, planning en begroting","deliverable":"Bodemonderzoek","existingLink":"","r":"OM","a":"OM","s":"","c":"PO","i":"","opm":""},{"row":22,"step":"1.8","blok":"Visie, planning en begroting","deliverable":"Externe veiligheid","existingLink":"","r":"OM","a":"OM","s":"","c":"PO","i":"","opm":""},{"row":23,"step":"1.8","blok":"Visie, planning en begroting","deliverable":"Bouwkostendeskundig advies","existingLink":"","r":"OM","a":"OM","s":"","c":"PO","i":"","opm":""},{"row":24,"step":"1.8","blok":"Visie, planning en begroting","deliverable":"Ontwikkelvisie","existingLink":"","r":"OM","a":"PO","s":"","c":"","i":"","opm":""},{"row":25,"step":"1.8","blok":"Visie, planning en begroting","deliverable":"Elementenbegroting","existingLink":"","r":"OM","a":"PO","s":"","c":"PM","i":"MT","opm":""},{"row":27,"step":"1.9","blok":"Presentatie voor grondeigenaar maken","deliverable":"Definitieve presentatie eigenaar","existingLink":"","r":"OM","a":"PO","s":"","c":"","i":"MT","opm":""},{"row":29,"step":"1.10","blok":"Presentatie aan grondeigenaar","deliverable":"Gespreksverslag presentatie","existingLink":"Bigin","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":30,"step":"1.10","blok":"Presentatie aan grondeigenaar","deliverable":"Onderhandelingsstrategie bepaald","existingLink":"Link naar Never Split the Difference Negotiation One-Sheet","r":"OM","a":"PO","s":"","c":"","i":"","opm":""},{"row":32,"step":"1.11","blok":"Onderhandeling tot aan intentieovereenkomst","deliverable":"Uitgangspuntendocument opgesteld","existingLink":"Link naar Uitgangspuntendocument","r":"OM","a":"PO","s":"","c":"","i":"MT","opm":""},{"row":33,"step":"1.11","blok":"Onderhandeling tot aan intentieovereenkomst","deliverable":"Concept intentieovereenkomst","existingLink":"IO document","r":"OM","a":"MT","s":"","c":"PO","i":"","opm":""},{"row":34,"step":"1.11","blok":"Onderhandeling tot aan intentieovereenkomst","deliverable":"Getekende intentieovereenkomst","existingLink":"Ondertekend document","r":"OM","a":"MT","s":"","c":"PO","i":"","opm":""},{"row":36,"step":"1.12","blok":"Fase-afronding en besluitvorming","deliverable":"Fasebeslisdocument","existingLink":"Link naar fasebeslisdocument","r":"OM","a":"MT","s":"","c":"PO","i":"","opm":""}]},{"sheet":"Haalbaarheidsfase","tasks":[{"row":3,"step":"2.1","blok":"Goedkeuring gemeente","deliverable":"Gespreksverslag gemeente","existingLink":"Link naar gespreksverslag eerste overleg","r":"OM","a":"OM","s":"","c":"","i":"","opm":""},{"row":4,"step":"2.1","blok":"Goedkeuring gemeente","deliverable":"Planboek / SO / telprint","existingLink":"Link naar ingediend plan bij gemeente","r":"OM","a":"PO","s":"","c":"","i":"MT","opm":""},{"row":5,"step":"2.1","blok":"Goedkeuring gemeente","deliverable":"Architectenselectie","existingLink":"Link naar keuze en onderbouwing architect","r":"OM","a":"PO","s":"","c":"MT","i":"","opm":""},{"row":6,"step":"2.1","blok":"Goedkeuring gemeente","deliverable":"Overzicht randvoorwaarden gemeente","existingLink":"Link naar document met eisen, obstakels en oplossingsrichtingen","r":"OM","a":"OM","s":"","c":"PO","i":"","opm":""},{"row":7,"step":"2.1","blok":"Goedkeuring gemeente","deliverable":"Akkoord gemeente op initiatief","existingLink":"Link naar schriftelijke bevestiging","r":"OM","a":"PO","s":"","c":"","i":"MT","opm":""},{"row":8,"step":"2.1","blok":"Goedkeuring gemeente","deliverable":"Intentieovereenkomst gemeente","existingLink":"Link naar getekende intentieovereenkomst","r":"PO","a":"MT","s":"OM","c":"","i":"","opm":""},{"row":9,"step":"2.1","blok":"Goedkeuring gemeente","deliverable":"Concept anterieure overeenkomst","existingLink":"Link naar eerste opzet overeenkomst","r":"PO","a":"MT","s":"PM","c":"","i":"","opm":""},{"row":11,"step":"2.2","blok":"Koopovereenkomst grondpositie","deliverable":"Koopovereenkomst grondpositie (concept)","existingLink":"Link naar concept koopovereenkomst","r":"PO","a":"MT","s":"","c":"","i":"","opm":""},{"row":12,"step":"2.2","blok":"Koopovereenkomst grondpositie","deliverable":"Juridisch en fiscaal advies","existingLink":"Link naar adviesdocument","r":"PO","a":"","s":"","c":"","i":"MT","opm":""},{"row":13,"step":"2.2","blok":"Koopovereenkomst grondpositie","deliverable":"Getekende koopovereenkomst","existingLink":"Link naar getekend contract","r":"PO","a":"MT","s":"","c":"","i":"","opm":""},{"row":15,"step":"2.3","blok":"Monitor de financiële aspecten","deliverable":"Geactualiseerde elementenbegroting","existingLink":"Link naar actuele begroting","r":"OM","a":"PO","s":"","c":"PM","i":"","opm":""},{"row":17,"step":"2.4","blok":"Voor het delen van begrotingen met derden, bijvoorbeeld gemeenten","deliverable":"Interne elementenbegroting","existingLink":"Link naar interne versie begroting","r":"OM","a":"PO","s":"","c":"","i":"","opm":""},{"row":18,"step":"2.4","blok":"Voor het delen van begrotingen met derden, bijvoorbeeld gemeenten","deliverable":"Gecontroleerde begroting (vier-ogen)","existingLink":"Link naar gecontroleerde versie","r":"OM","a":"PO","s":"","c":"PM","i":"","opm":""},{"row":19,"step":"2.4","blok":"Voor het delen van begrotingen met derden, bijvoorbeeld gemeenten","deliverable":"Afgestemde begroting met VKZ","existingLink":"Link naar afgestemde versie","r":"OM","a":"PO","s":"","c":"","i":"PM","opm":""},{"row":21,"step":"2.5","blok":"Communicatie met buurt en (toekomstige) bewoners en grondeigenaar","deliverable":"Overzicht contactmomenten omgeving","existingLink":"Link naar logboek omgeving","r":"OM","a":"PO","s":"","c":"","i":"PM","opm":""},{"row":22,"step":"2.5","blok":"Communicatie met buurt en (toekomstige) bewoners en grondeigenaar","deliverable":"Projectwebsite omgeving","existingLink":"Link naar projectwebsite","r":"OM","a":"PO","s":"","c":"","i":"PM","opm":""},{"row":23,"step":"2.5","blok":"Communicatie met buurt en (toekomstige) bewoners en grondeigenaar","deliverable":"Input toekomstige bewoners","existingLink":"Link naar verslag sessies / input","r":"OM","a":"PO","s":"","c":"","i":"PM","opm":""},{"row":24,"step":"2.5","blok":"Communicatie met buurt en (toekomstige) bewoners en grondeigenaar","deliverable":"Updates grondeigenaar","existingLink":"Link naar communicatieoverzicht","r":"OM","a":"PO","s":"","c":"","i":"PM","opm":""},{"row":25,"step":"2.5","blok":"Communicatie met buurt en (toekomstige) bewoners en grondeigenaar","deliverable":"Woonpanel verslag","existingLink":"Link naar verslag woonpanel","r":"PO","a":"","s":"OM","c":"","i":"PM","opm":""},{"row":26,"step":"2.5","blok":"Communicatie omgeving","deliverable":"Verslag participatie bewoners","existingLink":"Link naar participatieverslagen","r":"PO","a":"","s":"PM","c":"","i":"","opm":""},{"row":28,"step":"2.6","blok":"Fase-afronding en besluitvorming","deliverable":"Fasedocument VO compleet ingevuld","existingLink":"Link naar document","r":"PO","a":"PO","s":"OM","c":"","i":"MT","opm":""},{"row":29,"step":"2.6","blok":"Fase-afronding en besluitvorming","deliverable":"Fasebeslisdocument gereed","existingLink":"Link naar document","r":"PO","a":"MT","s":"OM","c":"","i":"","opm":""}]},{"sheet":"Ontwikkelfase VO","tasks":[{"row":3,"step":"3.1","blok":"Planvorming en afstemming","deliverable":"Projectplanning VO","existingLink":"Link naar planning","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":4,"step":"3.1","blok":"Planvorming en afstemming","deliverable":"Planologische route","existingLink":"Link naar notitie route","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":5,"step":"3.1","blok":"Planvorming en afstemming","deliverable":"Concept anterieure overeenkomst (start)","existingLink":"Link naar eerste opzet","r":"PO","a":"PO","s":"PM","c":"","i":"MT","opm":""},{"row":7,"step":"3.2","blok":"Communicatie","deliverable":"Communicatie richting omwonenden","existingLink":"Link naar communicatieoverzicht","r":"PM","a":"PM","s":"PO","c":"","i":"","opm":""},{"row":8,"step":"3.2","blok":"Communicatie","deliverable":"Projectwebsite geactualiseerd","existingLink":"Link naar website","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":9,"step":"3.2","blok":"Communicatie","deliverable":"Communicatieplan gemeente en omgeving","existingLink":"Link naar plan","r":"PM","a":"PM","s":"PO","c":"","i":"","opm":""},{"row":11,"step":"3.3","blok":"Anterieure overeenkomst","deliverable":"Doelstellingen afgestemd met Lexence","existingLink":"Link naar afstemming","r":"PO","a":"PO","s":"PM","c":"","i":"MT","opm":""},{"row":12,"step":"3.3","blok":"Anterieure overeenkomst","deliverable":"Onderhandelingsstrategie","existingLink":"Link naar negotiation sheet","r":"PO","a":"PO","s":"PM","c":"","i":"","opm":""},{"row":13,"step":"3.3","blok":"Anterieure overeenkomst","deliverable":"(Concept) anterieure overeenkomst","existingLink":"Link naar document","r":"PO","a":"PO","s":"PM","c":"","i":"MT","opm":""},{"row":14,"step":"3.3","blok":"Anterieure overeenkomst","deliverable":"Publiciteitsmoment AO","existingLink":"Link naar communicatie","r":"PO","a":"PO","s":"PM","c":"","i":"MT","opm":""},{"row":16,"step":"3.4","blok":"Levering grond","deliverable":"Risicoanalyse grondpositie","existingLink":"Link naar analyse","r":"PO","a":"PO","s":"PM","c":"","i":"MT","opm":""},{"row":17,"step":"3.4","blok":"Levering grond","deliverable":"Financieringsstructuur","existingLink":"Link naar opzet","r":"PO","a":"PO","s":"PM","c":"","i":"MT","opm":""},{"row":18,"step":"3.4","blok":"Levering grond","deliverable":"Concept akte","existingLink":"Link naar concept","r":"PO","a":"PO","s":"PM","c":"","i":"MT","opm":""},{"row":19,"step":"3.4","blok":"Levering grond","deliverable":"Notariële levering","existingLink":"Link naar akte","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":21,"step":"3.5","blok":"Bepalen ontwerpstrategie en uitwerkingsproces","deliverable":"Keuze ontwerpstrategie","existingLink":"","r":"PM","a":"MT","s":"PO","c":"","i":"MT","opm":""},{"row":22,"step":"3.5","blok":"Bepalen ontwerpstrategie en uitwerkingsproces","deliverable":"Planning ontwerptraject","existingLink":"Link naar planning","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":23,"step":"3.5","blok":"Bepalen ontwerpstrategie en uitwerkingsproces","deliverable":"Selectie adviseurs","existingLink":"Link naar selectieoverzicht","r":"PM","a":"MT","s":"PO","c":"","i":"MT","opm":""},{"row":24,"step":"3.5","blok":"Bepalen ontwerpstrategie en uitwerkingsproces","deliverable":"Selectie aannemer","existingLink":"Link naar selectieproces","r":"PM","a":"MT","s":"PO","c":"","i":"MT","opm":""},{"row":25,"step":"3.5","blok":"Bepalen ontwerpstrategie en uitwerkingsproces","deliverable":"Overeenkomsten adviseurs","existingLink":"Link naar contracten","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":26,"step":"3.5","blok":"Bepalen ontwerpstrategie en uitwerkingsproces","deliverable":"Bouwteamovereenkomst","existingLink":"Link naar overeenkomst","r":"PM","a":"MT","s":"PO","c":"","i":"MT","opm":""},{"row":28,"step":"3.6","blok":"VO gebouw uitwerken","deliverable":"Input PvE en strategie gedeeld","existingLink":"Link naar inputdocument","r":"PM","a":"PM","s":"PO","c":"","i":"","opm":""},{"row":29,"step":"3.6","blok":"VO gebouw uitwerken","deliverable":"Quickscan ruimtelijke onderbouwing","existingLink":"Link naar rapport","r":"PM","a":"PM","s":"PO","c":"","i":"","opm":""},{"row":30,"step":"3.6","blok":"VO gebouw uitwerken","deliverable":"VO ontwerp gebouw","existingLink":"Link naar ontwerp","r":"PM","a":"PM","s":"PO","c":"","i":"","opm":""},{"row":31,"step":"3.6","blok":"VO gebouw uitwerken","deliverable":"NUTS overleg","existingLink":"Link naar verslag","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":32,"step":"3.6","blok":"VO gebouw uitwerken","deliverable":"Technische toetsingen","existingLink":"Link naar rapportages","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":33,"step":"3.6","blok":"VO gebouw uitwerken","deliverable":"Impactanalyse kosten en planning","existingLink":"Link naar analyse","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":34,"step":"3.6","blok":"VO gebouw uitwerken","deliverable":"Presentatie VO","existingLink":"Link naar presentatie","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":35,"step":"3.6","blok":"VO gebouw uitwerken","deliverable":"Vooroverleg welstand","existingLink":"Link naar verslag","r":"PM","a":"PM","s":"PO","c":"MT","i":"","opm":""},{"row":36,"step":"3.6","blok":"VO gebouw uitwerken","deliverable":"Definitief VO","existingLink":"Link naar definitief ontwerp","r":"PM","a":"MT","s":"PO","c":"","i":"","opm":""},{"row":38,"step":"3.7","blok":"VO interieur uitwerken","deliverable":"Selectie interieurarchitect","existingLink":"Link naar selectie","r":"PM","a":"MT","s":"PO","c":"","i":"","opm":""},{"row":39,"step":"3.7","blok":"VO interieur uitwerken","deliverable":"VO interieur ontwerp","existingLink":"Link naar ontwerp","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":41,"step":"3.8","blok":"Berekeningen","deliverable":"Puntentellingen woningen","existingLink":"Link naar berekening","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":42,"step":"3.8","blok":"Berekeningen","deliverable":"Bouwkostenraming VO","existingLink":"Link naar raming","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":43,"step":"3.8","blok":"Berekeningen","deliverable":"Broker’s opinion","existingLink":"Link naar rapport","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":44,"step":"3.8","blok":"Berekeningen","deliverable":"Geactualiseerde elementenbegroting","existingLink":"Link naar begroting","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":46,"step":"3.9","blok":"Betrekken woonpanel","deliverable":"Feedback woonpanel","existingLink":"Link naar input","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":48,"step":"3.10","blok":"Participatie overige stakeholders","deliverable":"Selectie participatiebureau","existingLink":"Link naar selectie","r":"PM","a":"PO","s":"","c":"","i":"","opm":""},{"row":49,"step":"3.10","blok":"Participatie overige stakeholders","deliverable":"Participatieplan","existingLink":"Link naar plan","r":"PM","a":"PO","s":"","c":"","i":"","opm":""},{"row":50,"step":"3.10","blok":"Participatie overige stakeholders","deliverable":"Participatiesessies","existingLink":"Link naar verslagen","r":"PM","a":"PO","s":"","c":"","i":"","opm":""},{"row":51,"step":"3.10","blok":"Participatie overige stakeholders","deliverable":"Analyse bezwaren","existingLink":"Link naar analyse","r":"PM","a":"PO","s":"","c":"","i":"MT","opm":""},{"row":52,"step":"3.10","blok":"Participatie overige stakeholders","deliverable":"Verwerkt participatieresultaat","existingLink":"Link naar ontwerpupdate","r":"PM","a":"PO","s":"","c":"","i":"MT","opm":""},{"row":53,"step":"3.10","blok":"Participatie overige stakeholders","deliverable":"Participatieverslag","existingLink":"Link naar verslag","r":"PM","a":"PO","s":"","c":"","i":"MT","opm":""},{"row":55,"step":"3.11","blok":"Voorbereiding omgevingsplanprocedure","deliverable":"Analyse knelpunten","existingLink":"Link naar analyse","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":56,"step":"3.11","blok":"Voorbereiding omgevingsplanprocedure","deliverable":"Ruimtelijke onderbouwing","existingLink":"Link naar document","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":57,"step":"3.11","blok":"Voorbereiding omgevingsplanprocedure","deliverable":"Onderzoeken","existingLink":"Link naar rapporten","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":58,"step":"3.11","blok":"Voorbereiding omgevingsplanprocedure","deliverable":"Afstemming gemeente","existingLink":"Link naar overlegverslagen","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":59,"step":"3.11","blok":"Voorbereiding omgevingsplanprocedure","deliverable":"Procedureplanning","existingLink":"Link naar planning","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":61,"step":"3.12","blok":"Fasegoedkeuring en besluitvorming","deliverable":"Fasedocument VO","existingLink":"Link naar document","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""},{"row":62,"step":"3.12","blok":"Fasegoedkeuring en besluitvorming","deliverable":"Fasebeslisdocument","existingLink":"Link naar document","r":"PM","a":"PM","s":"PO","c":"","i":"MT","opm":""}]},{"sheet":"Ontwikkelfase DO","tasks":[{"row":3,"step":"4.1","blok":"Planvorming en afstemming","deliverable":"Planning met mijlpalen","existingLink":"Link naar planning met mijlpalen","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":5,"step":"4.2","blok":"Bestemmingswijziging (omgevingsplan of BOPA)","deliverable":"Definitieve procedurekeuze","existingLink":"Link naar bevestigde keuze omgevingsplan of BOPA","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":6,"step":"4.2","blok":"Bestemmingswijziging (omgevingsplan of BOPA)","deliverable":"Complete aanvraag / ontwerp","existingLink":"Link naar complete aanvraag of ontwerp inclusief onderzoeken en onderbouwingen","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":7,"step":"4.2","blok":"Bestemmingswijziging (omgevingsplan of BOPA)","deliverable":"Afgestemde procedureplanning","existingLink":"Link naar planning, besluitvorming en communicatiemomenten","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":8,"step":"4.2","blok":"Bestemmingswijziging (omgevingsplan of BOPA)","deliverable":"Zienswijzenoverzicht en beantwoording","existingLink":"Link naar overzicht zienswijzen en beantwoording","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":9,"step":"4.2","blok":"Bestemmingswijziging (omgevingsplan of BOPA)","deliverable":"Vastgesteld omgevingsplan / verleende BOPA","existingLink":"Link naar vastgesteld besluit of vergunning","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":10,"step":"4.2","blok":"Bestemmingswijziging (omgevingsplan of BOPA)","deliverable":"Onherroepelijk besluit","existingLink":"Link naar onherroepelijk besluit","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":12,"step":"4.3","blok":"Technische en juridische voorbereiding","deliverable":"BENG-berekening","existingLink":"Link naar BENG-berekening","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":13,"step":"4.3","blok":"Technische en juridische voorbereiding","deliverable":"Bouwbesluittoets","existingLink":"Link naar bouwbesluittoets","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":14,"step":"4.3","blok":"Technische en juridische voorbereiding","deliverable":"Overzicht vergunningeisen","existingLink":"Link naar overzicht omgevingsvergunningseisen en aanvullende gemeentelijke eisen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":15,"step":"4.3","blok":"Technische en juridische voorbereiding","deliverable":"Subsidieaanvraag","existingLink":"Link naar subsidieaanvraag","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":16,"step":"4.3","blok":"Technische en juridische voorbereiding","deliverable":"Fiscale notitie","existingLink":"Link naar fiscale notitie","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":18,"step":"4.4","blok":"Stakeholdercommunicatie en afstemming","deliverable":"Geactualiseerde website","existingLink":"Link naar website","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":19,"step":"4.4","blok":"Stakeholdercommunicatie en afstemming","deliverable":"Stakeholderupdate","existingLink":"Link naar nieuwsbrief, update of informatiebijeenkomst","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":20,"step":"4.4","blok":"Stakeholdercommunicatie en afstemming","deliverable":"Uitgevoerd communicatieplan","existingLink":"Link naar communicatieplan gericht op omgeving en gemeente","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":22,"step":"4.5","blok":"Uitwerking definitief ontwerp","deliverable":"Opdracht DO","existingLink":"Link naar afgestemde doelstellingen en opdracht voor het maken van het DO","r":"PM","a":"MT","s":"","c":"","i":"","opm":""},{"row":23,"step":"4.5","blok":"Uitwerking definitief ontwerp","deliverable":"Concept DO-tekeningen","existingLink":"Link naar concept-tekeningen","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":24,"step":"4.5","blok":"Uitwerking definitief ontwerp","deliverable":"Eerste versie bestek","existingLink":"Link naar eerste versie bestek","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":25,"step":"4.5","blok":"Uitwerking definitief ontwerp","deliverable":"Oppervlakteberekeningen NEN 2580","existingLink":"Link naar oppervlakteberekeningen conform NEN 2580","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":26,"step":"4.5","blok":"Uitwerking definitief ontwerp","deliverable":"NUTS overlegverslag","existingLink":"Link naar NUTS overlegverslag","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":27,"step":"4.5","blok":"Uitwerking definitief ontwerp","deliverable":"NUTS aanvraag","existingLink":"Link naar aanvraag via mijnaansluiting.nl","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":28,"step":"4.5","blok":"Uitwerking definitief ontwerp","deliverable":"Goedgekeurd DO en begroting","existingLink":"Link naar door MT goedgekeurd DO en begroting","r":"PM","a":"MT","s":"","c":"","i":"","opm":""},{"row":30,"step":"4.6","blok":"Constructieve uitwerking en dimensionering","deliverable":"Constructieberekeningen","existingLink":"Link naar constructieberekeningen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":31,"step":"4.6","blok":"Constructieve uitwerking en dimensionering","deliverable":"Constructietekeningen","existingLink":"Link naar constructietekeningen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":32,"step":"4.6","blok":"Constructieve uitwerking en dimensionering","deliverable":"Afstemmingsverslag constructie en installaties","existingLink":"Link naar afstemming met installateurs en bouwkundig adviseurs","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":33,"step":"4.6","blok":"Constructieve uitwerking en dimensionering","deliverable":"Toets technische haalbaarheid DO","existingLink":"Link naar beoordeling technische haalbaarheid DO","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":35,"step":"4.7","blok":"Definitief interieurontwerp","deliverable":"Opdracht interieurarchitect DO","existingLink":"Link naar opdracht voor DO interieurtekeningen","r":"PM","a":"MT","s":"","c":"","i":"","opm":""},{"row":36,"step":"4.7","blok":"Definitief interieurontwerp","deliverable":"DO interieurtekeningen","existingLink":"Link naar DO interieurtekeningen","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":37,"step":"4.7","blok":"Definitief interieurontwerp","deliverable":"Beoordeling interieurtekeningen","existingLink":"Link naar beoordeling van de tekeningen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":38,"step":"4.7","blok":"Definitief interieurontwerp","deliverable":"Woonpanel feedback interieur","existingLink":"Link naar feedback woonpanel en opvolging","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":39,"step":"4.7","blok":"Definitief interieurontwerp","deliverable":"Advies makelaar","existingLink":"Link naar advies makelaar (indien verkoopproject)","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":40,"step":"4.7","blok":"Definitief interieurontwerp","deliverable":"Presentatie MT interieur","existingLink":"Link naar presentatie voor MT","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":41,"step":"4.7","blok":"Definitief interieurontwerp","deliverable":"Definitieve materialisatie en afwerking","existingLink":"Link naar vastgestelde materialisatie en afwerking","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":43,"step":"4.8","blok":"Materialen- en afwerkstaat bepalen","deliverable":"Materialenstaat","existingLink":"Link naar materialenstaat","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":45,"step":"4.8","blok":"Materialen- en afwerkstaat bepalen","deliverable":"Kleur- en afwerkstaat","existingLink":"Link naar kleur- en afwerkstaat per ruimte","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":46,"step":"4.9","blok":"Beoordeling DO-begroting en contractering aannemer","deliverable":"DO-begroting aannemer","existingLink":"Link naar DO-begroting opgesteld door aannemer","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":47,"step":"4.9","blok":"Beoordeling DO-begroting en contractering aannemer","deliverable":"Controle bouwkostendeskundige","existingLink":"Link naar controle bouwkostendeskundige","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":48,"step":"4.9","blok":"Beoordeling DO-begroting en contractering aannemer","deliverable":"Geoptimaliseerde DO-begroting","existingLink":"Link naar geoptimaliseerde begroting","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":49,"step":"4.9","blok":"Beoordeling DO-begroting en contractering aannemer","deliverable":"Selectiebesluit aannemer","existingLink":"Link naar selectie aannemer (indien nog nodig)","r":"PM","a":"MT","s":"","c":"","i":"PO","opm":""},{"row":50,"step":"4.9","blok":"Beoordeling DO-begroting en contractering aannemer","deliverable":"Aannemingsovereenkomst","existingLink":"Link naar aannemingsovereenkomst","r":"PM","a":"MT","s":"","c":"","i":"PO","opm":""},{"row":52,"step":"4.10","blok":"Waardebepaling en afstemming met makelaars en financiers en/of intermediairs","deliverable":"Broker’s opinion / taxatie","existingLink":"Link naar broker’s opinion of taxatie","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":53,"step":"4.10","blok":"Waardebepaling en afstemming met makelaars en financiers en/of intermediairs","deliverable":"Gevalideerde elementenbegroting","existingLink":"Link naar gevalideerde en geoptimaliseerde elementenbegroting","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":54,"step":"4.10","blok":"Waardebepaling en afstemming met makelaars en financiers en/of intermediairs","deliverable":"Financieringsscenario’s en exploitatieberekeningen","existingLink":"Link naar financieringsscenario’s en exploitatieberekeningen","r":"PP","a":"PO","s":"","c":"","i":"MT","opm":""},{"row":55,"step":"4.10","blok":"Waardebepaling en afstemming met makelaars en financiers en/of intermediairs","deliverable":"Externe begroting conform proces 2.4","existingLink":"Link naar begroting gedeeld conform proces haalbaarheidsfase 2.4","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":57,"step":"4.11","blok":"Welstandstoetsing en vergunningsaanvraag","deliverable":"Goedgekeurde welstandstoets","existingLink":"Link naar akkoord welstand","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":58,"step":"4.11","blok":"Welstandstoetsing en vergunningsaanvraag","deliverable":"Vergunningaanvraag","existingLink":"Link naar ingediende vergunningaanvraag","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":59,"step":"4.11","blok":"Welstandstoetsing en vergunningsaanvraag","deliverable":"Dossier omgevingsvergunningsprocedure","existingLink":"Link naar dossier omgevingsvergunningsprocedure","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":60,"step":"4.11","blok":"Welstandstoetsing en vergunningsaanvraag","deliverable":"Huisnummerbesluit","existingLink":"Link naar huisnummerbesluit","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":62,"step":"4.12","blok":"Keukenontwerp en offerte","deliverable":"Keukenontwerp en offerte","existingLink":"Link naar ontwerp en offerte voor keukens","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":63,"step":"4.12","blok":"Keukenontwerp en offerte","deliverable":"Verwerkte keukenkeuze in begroting en DO","existingLink":"Link naar verwerkte keuze in begroting en DO","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":65,"step":"4.13","blok":"Fasegoedkeuring en besluitvorming","deliverable":"Fasedocument DO","existingLink":"Link naar fasedocument","r":"PM","a":"PM","s":"","c":"","i":"PO","opm":""},{"row":66,"step":"4.13","blok":"Fasegoedkeuring en besluitvorming","deliverable":"Fasebeslisdocument DO","existingLink":"Link naar fasebeslisdocument","r":"PM","a":"MT","s":"","c":"","i":"PO","opm":""}]},{"sheet":"Ontwikkelfase TO","tasks":[{"row":3,"step":"5.1","blok":"Planvorming en afstemming","deliverable":"Planning met mijlpalen","existingLink":"Link naar planning met mijlpalen","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":5,"step":"5.2","blok":"Opstellen en valideren van bestektekeningen","deliverable":"Opdracht TO uitwerking","existingLink":"Link naar opdracht aan aannemer / ontwerpteam","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":6,"step":"5.2","blok":"Opstellen en valideren van bestektekeningen","deliverable":"Concept bestektekeningen","existingLink":"Link naar concept bestektekeningen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":7,"step":"5.2","blok":"Opstellen en valideren van bestektekeningen","deliverable":"Definitieve bestektekeningen","existingLink":"Link naar definitieve bestektekeningen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":8,"step":"5.2","blok":"Opstellen en valideren van bestektekeningen","deliverable":"Bestek","existingLink":"Link naar bestek","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":9,"step":"5.2","blok":"Opstellen en valideren van bestektekeningen","deliverable":"Standaard opties","existingLink":"Link naar modulaire opties badkamer/keuken","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":11,"step":"5.3","blok":"Technische en constructieve uitwerking","deliverable":"Installatieontwerp","existingLink":"Link naar installaties","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":12,"step":"5.3","blok":"Technische en constructieve uitwerking","deliverable":"NUTS aansluitingen","existingLink":"Link naar aanvragen nuts","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":13,"step":"5.3","blok":"Technische en constructieve uitwerking","deliverable":"Brandveiligheidsplan","existingLink":"Link naar brandveiligheid","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":14,"step":"5.3","blok":"Technische en constructieve uitwerking","deliverable":"Duurzaamheidsmaatregelen","existingLink":"Link naar BENG/EPC","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":15,"step":"5.3","blok":"Technische en constructieve uitwerking","deliverable":"Constructieberekeningen","existingLink":"Link naar berekeningen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":16,"step":"5.3","blok":"Technische en constructieve uitwerking","deliverable":"Constructietekeningen","existingLink":"Link naar tekeningen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":17,"step":"5.3","blok":"Technische en constructieve uitwerking","deliverable":"Integraal bestek","existingLink":"Link naar integraal bestek","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":19,"step":"5.4","blok":"Juridische aspecten","deliverable":"Overeenkomsten nevenaannemers","existingLink":"Link naar contracten","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":20,"step":"5.4","blok":"Juridische aspecten","deliverable":"Meer- en minderwerk afspraken","existingLink":"Link naar afspraken","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":21,"step":"5.4","blok":"Juridische aspecten","deliverable":"Verzekeringen CAR","existingLink":"Link naar verzekeringen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":23,"step":"5.5","blok":"Uitwerking interieur en materiaalkeuzes","deliverable":"Opdracht interieur TO","existingLink":"Link naar opdracht","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":24,"step":"5.5","blok":"Uitwerking interieur en materiaalkeuzes","deliverable":"Interieur bestektekeningen","existingLink":"Link naar tekeningen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":25,"step":"5.5","blok":"Uitwerking interieur en materiaalkeuzes","deliverable":"Materialen- en kleurenstaat","existingLink":"Link naar staten","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":26,"step":"5.5","blok":"Uitwerking interieur en materiaalkeuzes","deliverable":"Afstemming beheer","existingLink":"Link naar beheerinput","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":27,"step":"5.5","blok":"Uitwerking interieur en materiaalkeuzes","deliverable":"MT presentatie interieur","existingLink":"Link naar presentatie","r":"PM","a":"PM","s":"","c":"","i":"MT","opm":""},{"row":29,"step":"5.6","blok":"Exploitatieberekeningen en financiële haalbaarheid","deliverable":"Puntentelling","existingLink":"Link naar WWS","r":"PM","a":"PM","s":"","c":"","i":"MT","opm":""},{"row":30,"step":"5.6","blok":"Exploitatieberekeningen en financiële haalbaarheid","deliverable":"Taxatie / broker opinion","existingLink":"Link naar rapport","r":"PM","a":"PM","s":"","c":"","i":"MT","opm":""},{"row":31,"step":"5.6","blok":"Exploitatieberekeningen en financiële haalbaarheid","deliverable":"Leegwaarderatio","existingLink":"Link naar berekening","r":"PM","a":"PM","s":"","c":"","i":"MT","opm":""},{"row":32,"step":"5.6","blok":"Exploitatieberekeningen en financiële haalbaarheid","deliverable":"Financieringsmodel","existingLink":"Link naar model","r":"PO","a":"PO","s":"","c":"","i":"MT","opm":""},{"row":34,"step":"5.7","blok":"Contracten uitvoering/realisatie","deliverable":"Besluit nevenaanneming","existingLink":"Link naar MT besluit","r":"PM","a":"MT","s":"","c":"","i":"","opm":""},{"row":35,"step":"5.7","blok":"Contracten uitvoering/realisatie","deliverable":"Contracten nevenaannemers","existingLink":"Link naar contracten","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":36,"step":"5.7","blok":"Contracten uitvoering/realisatie","deliverable":"Contractvoorwaarden","existingLink":"Link naar voorwaarden","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":37,"step":"5.7","blok":"Contracten uitvoering/realisatie","deliverable":"Wkb afspraken","existingLink":"Link naar afspraken","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":39,"step":"5.8","blok":"Goedkeuring bestek en overgang naar realisatie of verkoop","deliverable":"Beoordeling bestek beheer","existingLink":"Link naar beoordeling","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":40,"step":"5.8","blok":"Goedkeuring bestek en overgang naar realisatie of verkoop","deliverable":"MT goedkeuring bestek","existingLink":"","r":"PM","a":"MT","s":"","c":"","i":"","opm":""},{"row":41,"step":"5.8","blok":"Goedkeuring bestek en overgang naar realisatie of verkoop","deliverable":"Fasedocument TO","existingLink":"Link naar document","r":"PM","a":"PM","s":"","c":"","i":"MT","opm":""},{"row":42,"step":"5.8","blok":"Goedkeuring bestek en overgang naar realisatie of verkoop","deliverable":"Fasebeslisdocument TO","existingLink":"Link naar document","r":"PM","a":"MT","s":"","c":"","i":"PO","opm":""}]},{"sheet":"Ontwikkelfase UO","tasks":[{"row":3,"step":"6.1","blok":"Regie op uitwerking uitvoeringsontwerp","deliverable":"Afspraken uitwerking UO","existingLink":"Link naar afspraken document","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":4,"step":"6.1","blok":"Regie op uitwerking uitvoeringsontwerp","deliverable":"Verdeling verantwoordelijkheden","existingLink":"Link naar vastgelegde rolverdeling","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":5,"step":"6.1","blok":"Regie op uitwerking uitvoeringsontwerp","deliverable":"Afgestemde uitvoeringsplanning","existingLink":"Link naar planning","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":6,"step":"6.1","blok":"Regie op uitwerking uitvoeringsontwerp","deliverable":"Verslagen ontwerpafstemmingen","existingLink":"Link naar overlegverslagen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":8,"step":"6.2","blok":"Toetsing van het uitvoeringsontwerp","deliverable":"Toets uitvoeringsontwerp aan DO","existingLink":"Link naar toetsdocument","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":9,"step":"6.2","blok":"Toetsing van het uitvoeringsontwerp","deliverable":"Kwaliteitstoets ontwerp","existingLink":"Link naar kwaliteitscontrole","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":10,"step":"6.2","blok":"Toetsing van het uitvoeringsontwerp","deliverable":"Adviseursrapportages","existingLink":"Link naar rapportages adviseurs","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":11,"step":"6.2","blok":"Toetsing van het uitvoeringsontwerp","deliverable":"Overzicht ontwerpwijzigingen","existingLink":"Link naar wijzigingslog","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":13,"step":"6.3","blok":"Coördinatie en integrale afstemming","deliverable":"Afgestemd integraal ontwerp","existingLink":"Link naar integrale afstemming","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":14,"step":"6.3","blok":"Coördinatie en integrale afstemming","deliverable":"Clashcontrole rapportages","existingLink":"Link naar clashcontroles","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":15,"step":"6.3","blok":"Coördinatie en integrale afstemming","deliverable":"Knelpuntenanalyse","existingLink":"Link naar knelpuntenoverzicht","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":16,"step":"6.3","blok":"Coördinatie en integrale afstemming","deliverable":"Risico- en afwijkingenoverzicht","existingLink":"Link naar risicoanalyse","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":18,"step":"6.4","blok":"Borging regelgeving en vergunning","deliverable":"Toets vergunningen en regelgeving","existingLink":"Link naar toetsdocument","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":19,"step":"6.4","blok":"Borging regelgeving en vergunning","deliverable":"Controle kritische onderdelen","existingLink":"Link naar controle rapport","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":20,"step":"6.4","blok":"Borging regelgeving en vergunning","deliverable":"Overzicht vergunningimpact wijzigingen","existingLink":"","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":22,"step":"6.5","blok":"Materiaal- en productkeuzes","deliverable":"Beoordeling materialen en producten","existingLink":"Link naar beoordeling","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":23,"step":"6.5","blok":"Materiaal- en productkeuzes","deliverable":"Toets duurzaamheid en onderhoud","existingLink":"Link naar toetsing","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":24,"step":"6.5","blok":"Materiaal- en productkeuzes","deliverable":"Overzicht alternatieven en optimalisaties","existingLink":"","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":26,"step":"6.6","blok":"Kosten en contractuele consequenties","deliverable":"Kostenanalyse wijzigingen","existingLink":"Link naar analyse","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":27,"step":"6.6","blok":"Kosten en contractuele toets","deliverable":"Impactanalyse budget en planning","existingLink":"Link naar impactanalyse","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":28,"step":"6.6","blok":"Kosten en contractuele consequenties","deliverable":"Vastgelegde meer- en minderwerk afspraken","existingLink":"Link naar contractdocument","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":30,"step":"6.7","blok":"Voorbereiding realisatiefase","deliverable":"Compleet uitvoeringsontwerp","existingLink":"Link naar definitief UO","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":31,"step":"6.7","blok":"Voorbereiding realisatiefase","deliverable":"Gedeeld projectdossier","existingLink":"Link naar dossier","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":32,"step":"6.7","blok":"Voorbereiding realisatiefase","deliverable":"Overdrachtsdocument realisatie","existingLink":"Link naar overdracht","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":33,"step":"6.7","blok":"Voorbereiding realisatiefase","deliverable":"Fasedocument UO","existingLink":"Link naar fasedocument","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":34,"step":"6.7","blok":"Voorbereiding realisatiefase","deliverable":"Fasebeslisdocument UO","existingLink":"Link naar document","r":"PM","a":"MT","s":"","c":"","i":"MT/PO","opm":""}]},{"sheet":"Verkoopfase","tasks":[{"row":3,"step":"7.1","blok":"Marketing & Positionering","deliverable":"Geselecteerd marketingbureau en visueel concept","existingLink":"Link naar bureaukeuze, huisstijl en visueel concept","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":4,"step":"7.1","blok":"Marketing & Positionering","deliverable":"Marketingmiddelen gereed","existingLink":"Link naar website, brochure, verkooptekeningen en renders","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":5,"step":"7.1","blok":"Marketing & Positionering","deliverable":"Campagneplan en leadgeneratie-aanpak","existingLink":"Link naar campagneplan en kanaalplanning","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":6,"step":"7.1","blok":"Marketing & Positionering","deliverable":"Uitgangspunten prijsstrategie en positionering vastgesteld","existingLink":"Link naar afgestemde uitgangspunten met MT","r":"PM","a":"MT","s":"","c":"","i":"","opm":""},{"row":7,"step":"7.1","blok":"Marketing & Positionering","deliverable":"Controle consistente projectuitingen","existingLink":"Link naar controle op consistentie en correctheid van uitingen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":9,"step":"7.2","blok":"Juridische Structurering","deliverable":"Geselecteerde notaris en juridische adviseurs","existingLink":"Link naar keuze notaris en betrokkenheid Lexence","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":10,"step":"7.2","blok":"Juridische Structurering","deliverable":"Koop- en aannemingsovereenkomsten","existingLink":"Link naar afgestemde koop- en aannemingsovereenkomsten","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":11,"step":"7.2","blok":"Juridische Structurering","deliverable":"Besluit juridische beheerstructuur","existingLink":"Link naar MT-besluit over VvE-beheerder en structuur","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":12,"step":"7.2","blok":"Juridische Structurering","deliverable":"Juridische structuurdocumenten","existingLink":"Link naar VvE, beheersstichting, mandeligheid en overige juridische documenten","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":13,"step":"7.2","blok":"Juridische Structurering","deliverable":"Consistente verkoopdocumentatie","existingLink":"Link naar controle marketing, contractstukken en technische uitwerking","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":15,"step":"7.3","blok":"Fiscaliteiten","deliverable":"Fiscale toets en optimalisatie","existingLink":"Link naar fiscale toets en optimalisatievoorstel","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":17,"step":"7.4","blok":"Selectie en Aansturing Makelaar","deliverable":"Vergelijking makelaarsvoorstellen","existingLink":"Link naar opgevraagde voorstellen voor waardes, aanpak en courtage","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":18,"step":"7.4","blok":"Selectie en Aansturing Makelaar","deliverable":"Geselecteerde makelaar en samenwerkingsafspraken","existingLink":"Link naar keuze makelaar en afspraken over verkoopproces, leadopvolging en courtage","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":20,"step":"7.5","blok":"Verkoopvoorbereiding & Kopersinformatie","deliverable":"Complete verkoopset","existingLink":"Link naar geordende commerciële, technische en juridische stukken","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":21,"step":"7.5","blok":"Verkoopvoorbereiding & Kopersinformatie","deliverable":"Consistentiecheck verkoopset","existingLink":"Link naar controle op consistentie tussen marketing, contractstukken en technische uitwerking","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":23,"step":"7.6","blok":"Verkoopstrategie & Prijsbepaling","deliverable":"Marktonderzoek en referentieanalyse","existingLink":"Link naar marktonderzoek en analyse referentieprojecten","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":24,"step":"7.6","blok":"Verkoopstrategie & Prijsbepaling","deliverable":"Prijsstrategie en fasering","existingLink":"Link naar prijsstrategie, prijsstelling en fasering","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":25,"step":"7.6","blok":"Verkoopstrategie & Prijsbepaling","deliverable":"Toewijzingscriteria en verkoopmomenten","existingLink":"Link naar criteria, verkoopmomenten en gemeentelijke doelgroepafspraken","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":26,"step":"7.6","blok":"Verkoopstrategie & Prijsbepaling","deliverable":"Definitieve prijslijst","existingLink":"Link naar met MT afgestemde en door directie ondertekende prijslijst","r":"PM","a":"MT","s":"","c":"","i":"PO","opm":""},{"row":28,"step":"7.7","blok":"Verkoopevent & Conversie","deliverable":"Geselecteerd evenementenbureau en eventopzet","existingLink":"Link naar keuze bureau, datum, locatie en opzet verkoopevent","r":"PM","a":"PM","s":"","c":"","i":"MT","opm":""},{"row":29,"step":"7.7","blok":"Verkoopevent & Conversie","deliverable":"Uitnodigings- en geïnteresseerdenbestand","existingLink":"Link naar opgebouwd en uitgenodigd bestand van geïnteresseerden","r":"PM","a":"PM","s":"","c":"","i":"MT","opm":""},{"row":30,"step":"7.7","blok":"Verkoopevent & Conversie","deliverable":"Verkoopevent uitgevoerd","existingLink":"Link naar uitvoering event met betrokken partners en complete verkoopinformatie","r":"PM","a":"PM","s":"","c":"PO","i":"MT","opm":""},{"row":31,"step":"7.7","blok":"Verkoopevent & Conversie","deliverable":"Leadregistratie en opvolgactie na event","existingLink":"Link naar vastlegging bezoekers, leads en directe opvolging","r":"PM","a":"PM","s":"","c":"","i":"MT","opm":""},{"row":33,"step":"7.8","blok":"Contractering & Kopersbegeleiding","deliverable":"Kopersbegeleiding en verwachtingsmanagement","existingLink":"Link naar informatie over planning, verwachtingen en keuzes voor kopers","r":"PM","a":"PM","s":"","c":"","i":"MT","opm":""},{"row":35,"step":"7.9","blok":"Goedkeuring verkoopfase en overgang naar realisatie","deliverable":"Fasedocument verkoopfase","existingLink":"Link naar fasedocument","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":36,"step":"7.9","blok":"Goedkeuring verkoopfase en overgang naar realisatie","deliverable":"Fasebeslisdocument verkoopfase","existingLink":"Link naar fasebeslisdocument","r":"PM","a":"MT","s":"","c":"","i":"PO","opm":""}]},{"sheet":"Realisatiefase","tasks":[{"row":3,"step":"8.1","blok":"Terreinoverdracht en start bouw","deliverable":"Formele terreinoverdracht","existingLink":"Link naar documentatie van de overdracht van het bouwterrein","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":4,"step":"8.1","blok":"Terreinoverdracht en start bouw","deliverable":"Bouwrijp terrein bevestigd","existingLink":"Link naar controle dat het terrein bouwrijp en vrij van obstakels is","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":5,"step":"8.1","blok":"Terreinoverdracht en start bouw","deliverable":"Nulmeting bouwterrein en omgeving","existingLink":"Link naar opname van belendende percelen en opstallen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":6,"step":"8.1","blok":"Terreinoverdracht en start bouw","deliverable":"Goedgekeurde bouwplaatsinrichting","existingLink":"Link naar controle bouwplaatsinrichting conform veiligheids- en logistieke eisen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":8,"step":"8.2","blok":"Bouwvoorbereiding","deliverable":"Afgestemde uitvoeringsplanning en fasering","existingLink":"Link naar detailplanning en fasering van de uitvoering","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":9,"step":"8.2","blok":"Bouwvoorbereiding","deliverable":"Complete set contract- en uitvoeringsdocumenten","existingLink":"Link naar complete contractstukken, vergunningen en uitvoeringsdocumenten","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":10,"step":"8.2","blok":"Bouwvoorbereiding","deliverable":"Afgestemde aansluitingen en nutsplanning","existingLink":"Link naar afstemming met nutsbedrijven en planning","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":11,"step":"8.2","blok":"Bouwvoorbereiding","deliverable":"Afgeronde meldingen en vergunningverplichtingen","existingLink":"Link naar controle op meldingen en vergunningtechnische verplichtingen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":13,"step":"8.3","blok":"Opstart uitvoeringsteam en coördinatie","deliverable":"Vastgelegde projectorganisatie en overlegstructuur","existingLink":"Link naar rollen, verantwoordelijkheden en overlegstructuur","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":14,"step":"8.3","blok":"Opstart uitvoeringsteam en coördinatie","deliverable":"Bouwplanning met mijlpalen","existingLink":"Link naar door aannemer opgestelde en bewaakte bouwplanning","r":"PM","a":"PM","s":"","c":"","i":"MT","opm":""},{"row":15,"step":"8.3","blok":"Opstart uitvoeringsteam en coördinatie","deliverable":"Gecontracteerde externe toezichthouders","existingLink":"Link naar selectie en contractering toezichthouders indien van toepassing","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":16,"step":"8.3","blok":"Opstart uitvoeringsteam en coördinatie","deliverable":"Veiligheids- en logistieke plannen aannemer","existingLink":"Link naar BLVC en overige veiligheids- en logistieke plannen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":18,"step":"8.4","blok":"Uitvoering en toezicht","deliverable":"Verslagen bouw- en werkvergaderingen","existingLink":"Link naar periodieke bouw- en werkvergaderingen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":19,"step":"8.4","blok":"Uitvoering en toezicht","deliverable":"Kwaliteitsinspecties en bevindingen","existingLink":"Link naar inspecties door toezichthouders en adviseurs","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":20,"step":"8.4","blok":"Uitvoering en toezicht","deliverable":"Knelpunten- en actielijst uitvoering","existingLink":"Link naar vastgelegde knelpunten en opvolging met aannemer en adviseurs","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":22,"step":"8.5","blok":"Kopersbijeenkomst","deliverable":"Opzet en planning kopersbijeenkomst","existingLink":"Link naar moment, doel, locatie en programma van de kopersbijeenkomst","r":"PM","a":"PO","s":"","c":"","i":"MT","opm":""},{"row":23,"step":"8.5","blok":"Kopersbijeenkomst","deliverable":"Eenduidige koperscommunicatie","existingLink":"Link naar communicatie over planning, opleverdatum, keuzes en vervolgstappen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":24,"step":"8.5","blok":"Kopersbijeenkomst","deliverable":"Vastgelegde vragen en opvolgpunten","existingLink":"Link naar overzicht van vragen, aandachtspunten en opvolging na de bijeenkomst","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":26,"step":"8.6","blok":"Communicatie en omgevingsmanagement","deliverable":"Omgevingscommunicatie uitgevoerd","existingLink":"Link naar communicatie richting omwonenden over relevante bouwwerkzaamheden","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":27,"step":"8.6","blok":"Communicatie en omgevingsmanagement","deliverable":"Projectupdates gepubliceerd","existingLink":"Link naar website, nieuwsbrieven of andere communicatiekanalen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":28,"step":"8.6","blok":"Communicatie en omgevingsmanagement","deliverable":"Afgestemde stakeholdercommunicatie","existingLink":"Link naar afstemming met gemeente, nutsbedrijven en andere stakeholders","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":29,"step":"8.6","blok":"Communicatie en omgevingsmanagement","deliverable":"Voortgangsinformatie voor huurders of kopers","existingLink":"Link naar communicatie richting potentiële huurders of kopers","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":31,"step":"8.7","blok":"Kostenbewaking en meer- en minderwerk","deliverable":"Gecontroleerde termijnstaten en facturen","existingLink":"Link naar controle en accordering van termijnstaten en facturen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":32,"step":"8.7","blok":"Kostenbewaking en meer- en minderwerk","deliverable":"Beoordeelde meer- en minderwerkvoorstellen","existingLink":"Link naar intern afgestemde voorstellen voor meer- en minderwerk","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":33,"step":"8.7","blok":"Kostenbewaking en meer- en minderwerk","deliverable":"Geactualiseerde financiële prognose","existingLink":"Link naar geactualiseerde prognose en budgetbewaking","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":34,"step":"8.7","blok":"Kostenbewaking en meer- en minderwerk","deliverable":"Contractueel vastgelegde wijzigingen","existingLink":"Link naar contractueel vastgelegde wijzigingen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":36,"step":"8.8","blok":"Financiële rapportage","deliverable":"Financiële voortgangsrapportage","existingLink":"Link naar periodieke financiële voortgangsrapportage","r":"PM","a":"PM","s":"","c":"","i":"MT","opm":""},{"row":37,"step":"8.8","blok":"Financiële rapportage","deliverable":"Rapportage aan financiers en aandeelhouders","existingLink":"Link naar maandelijkse rapportage over voortgang, budget en risico’s","r":"PM","a":"MT","s":"","c":"","i":"MT","opm":""},{"row":38,"step":"8.8","blok":"Financiële rapportage","deliverable":"Overzicht afwijkingen planning en begroting","existingLink":"Link naar rapportage van afwijkingen ten opzichte van planning en begroting","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":40,"step":"8.9","blok":"Technische oplevering","deliverable":"Voorschouw en kwaliteitscontroles","existingLink":"Link naar voorschouw en tussentijdse kwaliteitscontroles","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":41,"step":"8.9","blok":"Technische oplevering","deliverable":"Oplevering en gebrekenlijst","existingLink":"Link naar officiële oplevering en gebrekenlijst","r":"PM","a":"MT","s":"","c":"PPM","i":"","opm":""},{"row":42,"step":"8.9","blok":"Technische oplevering","deliverable":"Geteste en ingeregelde installaties","existingLink":"Link naar test- en inregelresultaten van installaties","r":"PM","a":"PM","s":"","c":"PPM","i":"","opm":""},{"row":43,"step":"8.9","blok":"Technische oplevering","deliverable":"Revisiedocumentatie en onderhoudsinformatie","existingLink":"Link naar opgeleverde revisiedocumentatie en onderhoudsinformatie","r":"PM","a":"PM","s":"","c":"PPM","i":"","opm":""},{"row":45,"step":"8.10","blok":"Ingebruikname en operationele voorbereiding","deliverable":"Juridisch gereed voor ingebruikname","existingLink":"Link naar controle op gereedmeldingen en juridische ingebruikname","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":46,"step":"8.10","blok":"Ingebruikname en operationele voorbereiding","deliverable":"Energielabels gebouw","existingLink":"Link naar energielabels voor het gebouw","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":47,"step":"8.10","blok":"Ingebruikname en operationele voorbereiding","deliverable":"Afgestemde planning ingebruikname","existingLink":"Link naar planning van ingebruikname met aannemer en beheerder","r":"PM","a":"PM","s":"","c":"PPM","i":"","opm":""},{"row":48,"step":"8.10","blok":"Ingebruikname en operationele voorbereiding","deliverable":"Overgedragen sleutels en gebouwsystemen","existingLink":"Link naar overdracht van sleutels, toegangscontrole en gebouwbeheersystemen","r":"PM","a":"PM","s":"","c":"PPM","i":"","opm":""},{"row":49,"step":"8.10","blok":"Ingebruikname en operationele voorbereiding","deliverable":"Werkende technische systemen","existingLink":"Link naar proefdraai en controle technische systemen","r":"PM","a":"PM","s":"","c":"PPM","i":"","opm":""},{"row":50,"step":"8.10","blok":"Ingebruikname en operationele voorbereiding","deliverable":"Afgestemde inrichting gemeenschappelijke ruimten","existingLink":"Link naar afstemming met propertymanagement over inrichting en gebruik","r":"PM","a":"PM","s":"","c":"PPM","i":"","opm":""},{"row":52,"step":"8.11","blok":"Overdracht naar propertymanagement","deliverable":"Afgestemde ingebruikname met propertymanagement","existingLink":"Link naar afstemming ingebruikname van het gebouw","r":"PM","a":"PM","s":"","c":"PPM","i":"","opm":""},{"row":53,"step":"8.11","blok":"Overdracht naar propertymanagement","deliverable":"Overgedragen beheer- en onderhoudsinformatie","existingLink":"Link naar overdracht van beheer- en onderhoudsinformatie","r":"PM","a":"PM","s":"","c":"PPM","i":"","opm":""},{"row":54,"step":"8.11","blok":"Overdracht naar propertymanagement","deliverable":"Overgedragen garanties, contracten en technische documentatie","existingLink":"Link naar overdracht van garanties, contracten en technische documentatie","r":"PM","a":"PM","s":"","c":"PPM","i":"","opm":""},{"row":56,"step":"8.12","blok":"Projectevaluatie","deliverable":"Projectevaluatie met aannemer en projectteam","existingLink":"Link naar projectevaluatie met aannemer en projectteam","r":"PM","a":"PM","s":"","c":"","i":"PO/MT","opm":""},{"row":57,"step":"8.12","blok":"Projectevaluatie","deliverable":"Eindanalyse kosten en planning","existingLink":"Link naar eindanalyse en vergelijking met oorspronkelijke begroting en planning","r":"PM","a":"PM","s":"","c":"","i":"MT","opm":""},{"row":58,"step":"8.12","blok":"Projectevaluatie","deliverable":"Vastgelegde leerpunten","existingLink":"Link naar leerpunten voor toekomstige projecten","r":"PM","a":"PM","s":"","c":"","i":"PO/MT","opm":""},{"row":60,"step":"8.13","blok":"Afronding juridische en financiële zaken","deliverable":"Afgewikkelde laatste betalingen","existingLink":"Link naar afronding van de laatste betalingen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":61,"step":"8.13","blok":"Afronding juridische en financiële zaken","deliverable":"Afgewikkelde subsidies en fiscale zaken","existingLink":"Link naar afwikkeling subsidies en fiscale zaken","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":62,"step":"8.13","blok":"Afronding juridische en financiële zaken","deliverable":"Afgeronde contractuele verplichtingen","existingLink":"Link naar controle op afronding van alle contractuele verplichtingen","r":"PM","a":"PM","s":"","c":"","i":"","opm":""},{"row":63,"step":"8.13","blok":"Afronding juridische en financiële zaken","deliverable":"Administratief gesloten project","existingLink":"Link naar administratieve afsluiting van het project","r":"PM","a":"MT","s":"","c":"","i":"","opm":""},{"row":64,"step":"8.13","blok":"Afronding juridische en financiële zaken","deliverable":"Fasedocument verkoopfase","existingLink":"Link naar fasedocument","r":"PM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":65,"step":"8.13","blok":"Afronding juridische en financiële zaken","deliverable":"Fasebeslisdocument verkoopfase","existingLink":"Link naar fasebeslisdocument","r":"PM","a":"MT","s":"","c":"","i":"PO","opm":""}]},{"sheet":"Garantiefase","tasks":[{"row":3,"step":"9.1","blok":"Formele overdracht van garanties","deliverable":"Vastgelegde garantietermijnen per contract","existingLink":"Link naar overzicht van garantietermijnen per contract","r":"PM","a":"PM","s":"PPM","c":"","i":"","opm":""},{"row":4,"step":"9.1","blok":"Formele overdracht van garanties","deliverable":"Overgedragen garantiedocumentatie","existingLink":"Link naar overgedragen garantiedocumenten aan Propertymanagement","r":"PM","a":"PM","s":"PPM","c":"","i":"","opm":""},{"row":5,"step":"9.1","blok":"Formele overdracht van garanties","deliverable":"Bevestigde contractuele garantieafspraken","existingLink":"Link naar bevestigde afspraken met aannemers en leveranciers","r":"PM","a":"PM","s":"PPM","c":"","i":"","opm":""},{"row":7,"step":"9.2","blok":"Inregelen meldpunt en procedures","deliverable":"Operationeel meldpunt garantieclaims","existingLink":"Link naar ingericht centraal meldpunt voor garantieclaims","r":"PPM","a":"PPM","s":"","c":"","i":"PM","opm":""},{"row":8,"step":"9.2","blok":"Inregelen meldpunt en procedures","deliverable":"Afgestemde responstijden en verantwoordelijkheden","existingLink":"Link naar overzicht van responstijden en verantwoordelijkheden per type klacht","r":"PPM","a":"PPM","s":"","c":"PM","i":"","opm":""},{"row":10,"step":"9.3","blok":"Bewonerservaring en klachtenmanagement","deliverable":"Opgestarte bewonersmonitoring","existingLink":"Link naar opgezette bewonersmonitoring en eerste gebruikservaringen","r":"PPM","a":"PPM","s":"","c":"","i":"","opm":""},{"row":11,"step":"9.3","blok":"Bewonerservaring en klachtenmanagement","deliverable":"Geregistreerde en gecategoriseerde meldingen","existingLink":"Link naar registratie en categorisatie van bewonersmeldingen","r":"PPM","a":"PPM","s":"","c":"","i":"","opm":""},{"row":12,"step":"9.3","blok":"Bewonerservaring en klachtenmanagement","deliverable":"Teruggekoppelde opvolging bewonersmeldingen","existingLink":"Link naar analyse, oplossing en terugkoppeling van acute en structurele gebreken","r":"PPM","a":"PPM","s":"","c":"","i":"","opm":""},{"row":14,"step":"9.4","blok":"Technische monitoring","deliverable":"Monitoring installaties","existingLink":"Link naar monitoring van verwarming, ventilatie, elektra en water","r":"PPM","a":"PPM","s":"","c":"","i":"","opm":""},{"row":15,"step":"9.4","blok":"Technische monitoring","deliverable":"Monitoring duurzaamheidsdoelstellingen","existingLink":"Link naar monitoring van EPC, BENG en energieverbruik","r":"PPM","a":"PPM","s":"","c":"","i":"","opm":""},{"row":16,"step":"9.4","blok":"Technische monitoring","deliverable":"Geregistreerde afwijkingen en opvolging","existingLink":"Link naar afwijkingenregister en terugkoppeling naar de aannemer","r":"PPM","a":"PM","s":"","c":"","i":"","opm":""},{"row":18,"step":"9.5","blok":"Bewonerservaring en klachtenmanagement","deliverable":"Geactualiseerde bewonersmonitoring","existingLink":"Link naar geactualiseerd overzicht van gebruikservaringen","r":"PPM","a":"PPM","s":"","c":"","i":"","opm":""},{"row":19,"step":"9.5","blok":"Bewonerservaring en klachtenmanagement","deliverable":"Geanalyseerde bewonersmeldingen","existingLink":"Link naar analyse van acute en structurele meldingen","r":"PPM","a":"PPM","s":"","c":"","i":"","opm":""},{"row":20,"step":"9.5","blok":"Bewonerservaring en klachtenmanagement","deliverable":"Afgeronde terugkoppeling aan bewoners","existingLink":"Link naar terugkoppeling over opvolging en afhandeling van meldingen","r":"PPM","a":"PPM","s":"","c":"","i":"","opm":""},{"row":22,"step":"9.6","blok":"Afhandeling garantieclaims","deliverable":"Geïnventariseerde garantieclaims","existingLink":"Link naar overzicht van gebreken en garantiegevallen","r":"PPM","a":"PM","s":"","c":"","i":"","opm":""},{"row":23,"step":"9.6","blok":"Afhandeling garantieclaims","deliverable":"Gecoördineerde herstelwerkzaamheden","existingLink":"Link naar planning en afhandeling van herstelwerkzaamheden met aannemers en leveranciers","r":"PPM","a":"PM","s":"","c":"","i":"","opm":""},{"row":24,"step":"9.6","blok":"Afhandeling garantieclaims","deliverable":"Gecommuniceerde voortgang garantieclaims","existingLink":"Link naar voortgang en afspraken met bewoners en overige stakeholders","r":"PPM","a":"PM","s":"","c":"","i":"","opm":""},{"row":26,"step":"9.7","blok":"Periodieke inspecties en onderhoudsbeurten","deliverable":"3 maanden-inspectie","existingLink":"Link naar 3 maanden-inspectie met eerste opschaling van garantie-issues","r":"PPM","a":"PM","s":"","c":"","i":"","opm":""},{"row":27,"step":"9.7","blok":"Periodieke inspecties en onderhoudsbeurten","deliverable":"6 maanden-inspectie","existingLink":"Link naar 6 maanden-inspectie met opvolging en beoordeling van herstelde punten","r":"PPM","a":"PM","s":"","c":"","i":"","opm":""},{"row":28,"step":"9.7","blok":"Periodieke inspecties en onderhoudsbeurten","deliverable":"11 maanden-inspectie","existingLink":"Link naar 11 maanden-inspectie met signalering van resterende garantiepunten","r":"PPM","a":"PM","s":"","c":"","i":"","opm":""},{"row":30,"step":"9.8","blok":"Eindevaluatie garantiefase","deliverable":"Analyse structurele gebreken en knelpunten","existingLink":"Link naar analyse van opgetreden gebreken en structurele knelpunten","r":"PPM","a":"PM","s":"","c":"","i":"","opm":""},{"row":31,"step":"9.8","blok":"Eindevaluatie garantiefase","deliverable":"Besproken verbeterpunten met bouwpartners","existingLink":"Link naar bespreking van verbeterpunten met bouwpartners","r":"PPM","a":"PM","s":"","c":"","i":"","opm":""},{"row":32,"step":"9.8","blok":"Eindevaluatie garantiefase","deliverable":"Vastgelegde leerpunten garantiefase","existingLink":"Link naar vastgelegde leerpunten voor volgende projecten","r":"PPM","a":"PM","s":"","c":"","i":"MT/PO","opm":""},{"row":34,"step":"9.9","blok":"Overgang naar regulier onderhoud","deliverable":"Geactualiseerd MJOP","existingLink":"Link naar MJOP met verwerkte kennis uit de garantiefase","r":"PPM","a":"PPM","s":"","c":"","i":"","opm":""},{"row":35,"step":"9.9","blok":"Overgang naar regulier onderhoud","deliverable":"Overgedragen openstaande punten","existingLink":"Link naar overdracht van openstaande punten naar regulier onderhoud","r":"PPM","a":"PPM","s":"","c":"","i":"","opm":""},{"row":36,"step":"9.9","blok":"Overgang naar regulier onderhoud","deliverable":"Afgesloten garantiefase","existingLink":"Link naar afgeronde overgang naar regulier onderhoud","r":"PPM","a":"MT","s":"","c":"","i":"","opm":""}]}];
+
+// Phase indices: 0 = Gemeenteontwikkeling (Cities only), 1..9 = project phases.
+const CITY_PHASE = PHASES_DATA[0];
+const PROJECT_PHASES = PHASES_DATA.slice(1);
+
+const T = {
+  nl: {
+    appTitle: '1828 · Fasedocument Tracker',
+    setupTitle: 'Welkom bij de Fasedocument Tracker',
+    setupSub: 'Vul hieronder in welke rol je hebt. Daarna kies je een Stad of een Project.',
+    labelRole: 'Jouw rol',
+    roleAll: 'Alle rollen (projectlead)',
+    roleOM: 'Ontwikkelmanager (OM)',
+    rolePO: 'Projectontwikkelaar (PO)',
+    rolePM: 'Projectmanager (PM)',
+    rolePPM: 'Property Manager (PPM)',
+    roleMT: 'Management Team (MT) — goedkeurder',
+    btnStart: 'Start →',
+    btnAdmin: '⚙ Admin-modus',
+    adminNote: '⚠ Admin-modus aan: blokken/taken kunnen worden herschikt en eigen rijen toegevoegd.',
+    cities: 'Steden',
+    projects: 'Projecten',
+    addCity: '+ Stad',
+    addProject: '+ Project',
+    noCities: 'Nog geen steden. Klik "+ Stad" om er een toe te voegen.',
+    noProjects: 'Nog geen projecten. Klik "+ Project" om er een toe te voegen.',
+    welcomeTitle: 'Kies waar je aan wilt werken',
+    welcomeSub: 'Steden volgen Gemeenteontwikkeling per stad (doorlopend). Projecten volgen het fase-voor-fase proces met goedkeuring.',
+    pickCity: 'Stad',
+    pickCityDesc: 'Doorlopend traject Gemeenteontwikkeling per gemeente.',
+    pickProject: 'Project',
+    pickProjectDesc: 'Acquisitie → Garantie, met formele fase-goedkeuring.',
+    btnBack: '← Terug',
+    btnAdminOff: 'Admin uit',
+    btnAdminOn: '⚙ Admin',
+    filterLabel: 'Filter:',
+    filterAll: 'Alle',
+    btnMarkAll: 'Alles ✓',
+    btnUnmarkAll: 'Alles ✗',
+    addRow: '+ Regel toevoegen',
+    addRowPrompt: 'Naam van de nieuwe deliverable:',
+    deleteRowConfirm: 'Eigen regel verwijderen?',
+    namePromptCity: 'Naam van de gemeente (bijv. Leiden, Amsterdam):',
+    namePromptProject: 'Naam van het project (bijv. Utrecht Oost):',
+    duplicateName: 'Deze naam bestaat al.',
+    customTag: 'eigen',
+    naLabel: 'N.v.t.',
+    naAria: 'Markeer als niet van toepassing',
+    submitForApproval: 'Indienen ter goedkeuring',
+    submittedTitle: 'Ingediend ter goedkeuring',
+    submittedDesc: 'Wachten op goedkeuring van de goedkeurder. Volgende fase blijft vergrendeld.',
+    withdraw: 'Intrekken',
+    approvePhase: '✓ Fase goedkeuren',
+    rejectPhase: '✗ Afwijzen',
+    approvedTitle: 'Fase goedgekeurd',
+    approvedDesc: 'Volgende fase is ontgrendeld.',
+    reopenPhase: 'Heropen fase',
+    readyTitle: 'Alle taken zijn afgerond of als n.v.t. gemarkeerd.',
+    readyDesc: 'Klik op "Indienen ter goedkeuring" om deze fase af te ronden.',
+    needsApprover: 'Alleen MT (goedkeurder) of admin kan een fase goedkeuren.',
+    lockedTitle: 'Deze fase is vergrendeld.',
+    lockedSub: 'Eerst moet de vorige fase worden goedgekeurd.',
+    crumbCities: 'Steden',
+    crumbProjects: 'Projecten',
+    statDone: 'Klaar',
+    statNa: 'N.v.t.',
+    statOpen: 'Open',
+    statLink: 'Met link',
+    exportTitle: 'Exporteer naar fasedocument',
+    exportDesc: 'Exporteer alle steden en projecten naar Excel.',
+    exportBtn: '⬇ Exporteer Excel',
+    adminBadge: 'Admin',
+    fase: 'Fase',
+    of: 'van',
+    tasksDone: 'taken voltooid',
+    tasks: 'taken',
+    applicable: 'van toepassing',
+    confirm: 'Bevestig',
+    cancel: 'Annuleer',
+    approver: 'Goedkeurder',
+  },
+  en: {
+    appTitle: '1828 · Phase Document Tracker',
+    setupTitle: 'Welcome to the Phase Document Tracker',
+    setupSub: 'Pick your role below. Then pick a City or a Project to work on.',
+    labelRole: 'Your role',
+    roleAll: 'All roles (project lead)',
+    roleOM: 'Development Manager (OM)',
+    rolePO: 'Project Developer (PO)',
+    rolePM: 'Project Manager (PM)',
+    rolePPM: 'Property Manager (PPM)',
+    roleMT: 'Management Team (MT) — approver',
+    btnStart: 'Start →',
+    btnAdmin: '⚙ Admin mode',
+    adminNote: '⚠ Admin mode on: bloks/tasks can be reordered and custom rows added.',
+    cities: 'Cities',
+    projects: 'Projects',
+    addCity: '+ City',
+    addProject: '+ Project',
+    noCities: 'No cities yet. Click "+ City" to add one.',
+    noProjects: 'No projects yet. Click "+ Project" to add one.',
+    welcomeTitle: 'Pick what to work on',
+    welcomeSub: 'Cities track ongoing Municipality Development per city. Projects follow the phase-by-phase flow with formal approval.',
+    pickCity: 'City',
+    pickCityDesc: 'Ongoing Municipality Development per city.',
+    pickProject: 'Project',
+    pickProjectDesc: 'Acquisition → Warranty, with formal phase approval.',
+    btnBack: '← Back',
+    btnAdminOff: 'Admin off',
+    btnAdminOn: '⚙ Admin',
+    filterLabel: 'Filter:',
+    filterAll: 'All',
+    btnMarkAll: 'All ✓',
+    btnUnmarkAll: 'All ✗',
+    addRow: '+ Add row',
+    addRowPrompt: 'Name of the new deliverable:',
+    deleteRowConfirm: 'Delete custom row?',
+    namePromptCity: 'City name (e.g. Leiden, Amsterdam):',
+    namePromptProject: 'Project name (e.g. Utrecht East):',
+    duplicateName: 'That name already exists.',
+    customTag: 'custom',
+    naLabel: 'N/A',
+    naAria: 'Mark as not applicable',
+    submitForApproval: 'Submit for approval',
+    submittedTitle: 'Submitted for approval',
+    submittedDesc: 'Awaiting approval. The next phase stays locked until then.',
+    withdraw: 'Withdraw',
+    approvePhase: '✓ Approve phase',
+    rejectPhase: '✗ Reject',
+    approvedTitle: 'Phase approved',
+    approvedDesc: 'The next phase is now unlocked.',
+    reopenPhase: 'Reopen phase',
+    readyTitle: 'All tasks are done or marked N/A.',
+    readyDesc: 'Click "Submit for approval" to complete this phase.',
+    needsApprover: 'Only MT (approver) or admin can approve a phase.',
+    lockedTitle: 'This phase is locked.',
+    lockedSub: 'The previous phase must be approved first.',
+    crumbCities: 'Cities',
+    crumbProjects: 'Projects',
+    statDone: 'Done',
+    statNa: 'N/A',
+    statOpen: 'Open',
+    statLink: 'With link',
+    exportTitle: 'Export to phase document',
+    exportDesc: 'Export all cities and projects to Excel.',
+    exportBtn: '⬇ Export Excel',
+    adminBadge: 'Admin',
+    fase: 'Phase',
+    of: 'of',
+    tasksDone: 'tasks completed',
+    tasks: 'tasks',
+    applicable: 'applicable',
+    confirm: 'Confirm',
+    cancel: 'Cancel',
+    approver: 'Approver',
+  }
+};
+
+const ROLES = ['OM','PO','PM','PPM','MT'];
+let lang = 'nl';
+const t = (k) => T[lang][k] || k;
+
+let state = {
+  role: 'all',
+  adminMode: false,
+  setupDone: false,
+  view: null,                              // {type:'city'|'project', id, phaseIdx?}
+  cities: {},                              // name -> {tasks:[...]}
+  cityOrder: [],
+  projects: {},                            // name -> {phases:[{tasks,submitted,approved}, ...]}
+  projectOrder: [],
+};
+
+// ── Task factory ─────────────────────────────────────────────────────────────
+function makeTaskList(srcTasks, prefix){
+  return srcTasks.map((task, i) => ({
+    ...task,
+    id: prefix + '_b_' + i,
+    status: 'open',                         // 'open' | 'done' | 'na'
+    link: task.existingLink || '',
+    custom: false,
+  }));
+}
+
+function makeCustomTask(blokKey, deliverable){
+  const [step, blok] = blokKey.split('||');
+  return {
+    row: 0, step, blok, deliverable,
+    r:'', a:'', s:'', c:'', i:'', opm:'',
+    id: 'c_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+    status: 'open',
+    link: '',
+    custom: true,
+  };
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+function init(){
+  // Seed two demo cities so the structural difference is visible.
+  ['Leiden','Amsterdam'].forEach(c => addCityInternal(c));
+  // Seed one demo project.
+  addProjectInternal('Utrecht Oost');
+  renderSetup();
+}
+
+function addCityInternal(name){
+  if (state.cities[name]) return false;
+  state.cities[name] = { tasks: makeTaskList(CITY_PHASE.tasks, 'city_'+name) };
+  state.cityOrder.push(name);
+  return true;
+}
+
+function addProjectInternal(name){
+  if (state.projects[name]) return false;
+  state.projects[name] = {
+    phases: PROJECT_PHASES.map((ph, pi) => ({
+      tasks: makeTaskList(ph.tasks, 'proj_'+name+'_p'+pi),
+      submitted: false,
+      approved: false,
+    }))
+  };
+  state.projectOrder.push(name);
+  return true;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function isApprover(){ return state.adminMode || state.role === 'MT' || state.role === 'all'; }
+
+function relevantTasks(tasks){
+  if (state.role === 'all') return tasks;
+  return tasks.filter(x => [x.r, x.a, x.s, x.c].some(r => r && r.includes(state.role)));
+}
+
+function progressOf(tasks){
+  const rel = relevantTasks(tasks);
+  const applicable = rel.filter(x => x.status !== 'na');
+  if (!applicable.length) return 1;          // nothing applicable = treat as complete
+  return applicable.filter(x => x.status === 'done').length / applicable.length;
+}
+
+function isPhaseUnlocked(projName, phaseIdx){
+  if (phaseIdx === 0) return true;
+  return state.projects[projName].phases[phaseIdx - 1].approved;
+}
+
+function isPhaseReady(phase){
+  // ready = at least one applicable task and all relevant tasks are non-open
+  const rel = relevantTasks(phase.tasks);
+  if (!rel.length) return false;
+  const open = rel.filter(x => x.status === 'open').length;
+  return open === 0;
+}
+
+function escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function setLang(l){
+  lang = l;
+  document.getElementById('btn-nl').classList.toggle('active', l==='nl');
+  document.getElementById('btn-en').classList.toggle('active', l==='en');
+  document.querySelector('title').textContent = t('appTitle');
+  if (!state.setupDone) renderSetup(); else renderApp();
+}
+
+// ── Setup ────────────────────────────────────────────────────────────────────
+function renderSetup(){
+  document.getElementById('hdr-meta').textContent = '';
+  document.getElementById('admin-badge-hdr').innerHTML = '';
+  document.getElementById('open-count').style.display = 'none';
+  document.getElementById('app').innerHTML = `
+    <div class="setup-card">
+      <h2>${t('setupTitle')}</h2>
+      <p>${t('setupSub')}</p>
+      <div class="field">
+        <label>${t('labelRole')}</label>
+        <select id="s-role">
+          <option value="all">${t('roleAll')}</option>
+          <option value="OM">${t('roleOM')}</option>
+          <option value="PO">${t('rolePO')}</option>
+          <option value="PM">${t('rolePM')}</option>
+          <option value="PPM">${t('rolePPM')}</option>
+          <option value="MT">${t('roleMT')}</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn" onclick="startApp()">${t('btnStart')}</button>
+        <button class="btn outline" onclick="toggleAdminSetup()">${t('btnAdmin')}</button>
+      </div>
+      <p id="admin-note" style="display:${state.adminMode?'block':'none'};color:#e67e22;margin-top:12px;font-size:13px">${t('adminNote')}</p>
+    </div>`;
+  if (state.role) {
+    const sel = document.getElementById('s-role'); if (sel) sel.value = state.role;
+  }
+}
+
+function toggleAdminSetup(){
+  state.adminMode = !state.adminMode;
+  const n = document.getElementById('admin-note');
+  if (n){ n.textContent = t('adminNote'); n.style.display = state.adminMode ? 'block':'none'; }
+}
+
+function startApp(){
+  state.role = document.getElementById('s-role').value;
+  state.setupDone = true;
+  state.view = null;
+  updateHeader();
+  renderApp();
+}
+
+function updateHeader(){
+  const role = state.role==='all' ? t('filterAll') : state.role;
+  document.getElementById('hdr-meta').textContent = `${t('labelRole').replace(':','')}: ${role}`;
+  document.getElementById('admin-badge-hdr').innerHTML =
+    state.adminMode ? `<span class="admin-badge">${t('adminBadge')}</span>` : '';
+}
+
+// ── Top-level render ─────────────────────────────────────────────────────────
+function renderApp(){
+  updateHeader();
+
+  document.getElementById('app').innerHTML = `
+    <div class="topbar">
+      <div class="topbar-left">
+        ${t('labelRole').replace(':','')}: <strong>${state.role==='all'?t('filterAll'):state.role}</strong>
+        ${isApprover() ? ` &nbsp;·&nbsp; <span style="color:#0e7490;font-weight:700">${t('approver')}</span>` : ''}
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn outline tiny" onclick="goBack()">${t('btnBack')}</button>
+        <button class="btn outline tiny" onclick="toggleAdmin()">${state.adminMode?t('btnAdminOff'):t('btnAdminOn')}</button>
+      </div>
+    </div>
+    <div class="layout">
+      <div class="sidebar">${renderSidebar()}</div>
+      <div>
+        <div class="main ${state.adminMode?'admin-mode':''}">${renderMain()}</div>
+        ${renderExportPanel()}
+      </div>
+    </div>`;
+}
+
+function renderSidebar(){
+  // Cities section
+  const cityRows = state.cityOrder.length === 0
+    ? `<div class="sb-empty">${t('noCities')}</div>`
+    : state.cityOrder.map(name => {
+        const tasks = state.cities[name].tasks;
+        const rel = relevantTasks(tasks);
+        const applicable = rel.filter(x=>x.status!=='na');
+        const done = applicable.filter(x=>x.status==='done').length;
+        const prog = progressOf(tasks);
+        const active = state.view && state.view.type==='city' && state.view.id===name;
+        return `<div class="sb-item ${active?'active city':''}" onclick="openCity('${escAttr(name)}')">
+          <span style="font-size:14px">${prog>=1?'✅':prog>0?'🔵':'⚪'}</span>
+          <div style="flex:1;min-width:0">
+            <div class="sb-name" title="${escH(name)}">${escH(name)}</div>
+            <div class="progress-bar"><div class="fill city" style="width:${Math.round(prog*100)}%"></div></div>
+            <div class="sb-count">${done}/${applicable.length} ${t('tasks')}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+  // Projects section
+  const projRows = state.projectOrder.length === 0
+    ? `<div class="sb-empty">${t('noProjects')}</div>`
+    : state.projectOrder.map(name => {
+        const proj = state.projects[name];
+        const totalApplicable = proj.phases.reduce((acc,ph)=> acc + relevantTasks(ph.tasks).filter(x=>x.status!=='na').length, 0);
+        const totalDone = proj.phases.reduce((acc,ph)=> acc + relevantTasks(ph.tasks).filter(x=>x.status==='done').length, 0);
+        const approvedCount = proj.phases.filter(p=>p.approved).length;
+        const prog = totalApplicable ? totalDone/totalApplicable : 0;
+        const active = state.view && state.view.type==='project' && state.view.id===name;
+        return `<div class="sb-item ${active?'active':''}" onclick="openProject('${escAttr(name)}')">
+          <span style="font-size:14px">${approvedCount===proj.phases.length?'🏁':approvedCount>0?'🔵':'⚪'}</span>
+          <div style="flex:1;min-width:0">
+            <div class="sb-name" title="${escH(name)}">${escH(name)}</div>
+            <div class="progress-bar"><div class="fill" style="width:${Math.round(prog*100)}%"></div></div>
+            <div class="sb-count">${approvedCount}/${proj.phases.length} ${t('fase').toLowerCase()}n · ${totalDone}/${totalApplicable} ${t('tasks')}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+  return `
+    <div class="sidebar-section">
+      <div class="sidebar-header cities">
+        <span>${t('cities')} <span style="font-weight:400;opacity:.7">${state.cityOrder.length}</span></span>
+        <button class="add-pill" onclick="promptAddCity()">${t('addCity')}</button>
+      </div>
+      ${cityRows}
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-header projects">
+        <span>${t('projects')} <span style="font-weight:400;opacity:.7">${state.projectOrder.length}</span></span>
+        <button class="add-pill" onclick="promptAddProject()">${t('addProject')}</button>
+      </div>
+      ${projRows}
+    </div>`;
+}
+
+function escAttr(s){ return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+// ── Main panel ───────────────────────────────────────────────────────────────
+function renderMain(){
+  if (!state.view) return renderWelcome();
+  if (state.view.type === 'city') return renderCity(state.view.id);
+  if (state.view.type === 'project') return renderProject(state.view.id);
+  return '';
+}
+
+function renderWelcome(){
+  return `<div class="welcome">
+    <h2>${t('welcomeTitle')}</h2>
+    <p>${t('welcomeSub')}</p>
+    <div class="picker">
+      <div class="pick-card cities" onclick="promptAddCity()">
+        <div class="pc-icon">🏙️</div>
+        <h3>${t('pickCity')}</h3>
+        <p>${t('pickCityDesc')}</p>
+      </div>
+      <div class="pick-card" onclick="promptAddProject()">
+        <div class="pc-icon">🏗️</div>
+        <h3>${t('pickProject')}</h3>
+        <p>${t('pickProjectDesc')}</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderCity(name){
+  const city = state.cities[name];
+  if (!city) { state.view = null; return renderWelcome(); }
+  const tasks = city.tasks;
+  const rel = relevantTasks(tasks);
+  const applicable = rel.filter(x=>x.status!=='na');
+  const done = applicable.filter(x=>x.status==='done').length;
+  const naCount = rel.filter(x=>x.status==='na').length;
+
+  let html = `
+    <div class="crumbs">${t('crumbCities')} / <strong>${escH(name)}</strong></div>
+    <div class="phase-header">
+      <div>
+        <h2>🏙️ ${escH(name)} — ${escH(CITY_PHASE.sheet)}</h2>
+        <div class="meta">${done} ${t('of')} ${applicable.length} ${t('applicable')} · ${naCount} ${t('statNa')} · ${rel.length} ${t('tasks')}</div>
+      </div>
+      <div class="phase-actions">
+        <button class="btn outline tiny" onclick="markAllInList('city','${escAttr(name)}',null,'done')">${t('btnMarkAll')}</button>
+        <button class="btn outline tiny" onclick="markAllInList('city','${escAttr(name)}',null,'open')">${t('btnUnmarkAll')}</button>
+      </div>
+    </div>
+    ${renderRoleBar()}
+    ${renderTaskList(tasks, {ctxType:'city', ctxId:name, phaseIdx:null})}`;
+  return html;
+}
+
+function renderProject(name){
+  const proj = state.projects[name];
+  if (!proj) { state.view = null; return renderWelcome(); }
+  let phaseIdx = state.view.phaseIdx ?? 0;
+  if (phaseIdx >= proj.phases.length) phaseIdx = 0;
+  state.view.phaseIdx = phaseIdx;
+
+  // Phase tabs
+  const tabs = proj.phases.map((ph, pi) => {
+    const unlocked = isPhaseUnlocked(name, pi);
+    const cls = [
+      'ptab',
+      pi === phaseIdx ? 'active' : '',
+      !unlocked ? 'locked' : '',
+      ph.approved ? 'approved' : '',
+    ].filter(Boolean).join(' ');
+    const dot = !unlocked ? '🔒' : ph.approved ? '✅' : ph.submitted ? '🟡' : isPhaseReady(ph) ? '🟢' : (relevantTasks(ph.tasks).some(x=>x.status==='done') ? '🔵' : '⚪');
+    const onclick = unlocked ? `selectPhase(${pi})` : '';
+    return `<div class="${cls}" onclick="${onclick}">
+      <span class="pdot">${dot}</span>
+      <span>${pi+1}. ${escH(PROJECT_PHASES[pi].sheet)}</span>
+    </div>`;
+  }).join('');
+
+  const phase = proj.phases[phaseIdx];
+  const phaseSheet = PROJECT_PHASES[phaseIdx];
+  const unlocked = isPhaseUnlocked(name, phaseIdx);
+
+  let body = '';
+  if (!unlocked){
+    body = `<div class="empty-state">
+      <div class="big">🔒</div>
+      <h3>${t('lockedTitle')}</h3>
+      <p>${t('lockedSub')}</p>
+    </div>`;
+  } else {
+    const rel = relevantTasks(phase.tasks);
+    const applicable = rel.filter(x=>x.status!=='na');
+    const done = applicable.filter(x=>x.status==='done').length;
+    const naCount = rel.filter(x=>x.status==='na').length;
+    const ready = isPhaseReady(phase);
+
+    let banner = '';
+    if (phase.approved){
+      banner = `<div class="approval-banner approved">
+        <div class="ab-text"><strong>✅ ${t('approvedTitle')}.</strong> ${t('approvedDesc')}</div>
+        ${isApprover() ? `<button class="btn outline tiny" onclick="reopenPhase('${escAttr(name)}',${phaseIdx})">${t('reopenPhase')}</button>` : ''}
+      </div>`;
+    } else if (phase.submitted){
+      banner = `<div class="approval-banner submitted">
+        <div class="ab-text"><strong>🟡 ${t('submittedTitle')}.</strong> ${t('submittedDesc')}</div>
+        ${isApprover()
+          ? `<button class="btn success tiny" onclick="approvePhase('${escAttr(name)}',${phaseIdx})">${t('approvePhase')}</button>
+             <button class="btn danger tiny" onclick="rejectPhase('${escAttr(name)}',${phaseIdx})">${t('rejectPhase')}</button>`
+          : `<button class="btn outline tiny" onclick="withdrawPhase('${escAttr(name)}',${phaseIdx})">${t('withdraw')}</button>
+             <span style="font-size:11px;color:#888">${t('needsApprover')}</span>`}
+      </div>`;
+    } else if (ready){
+      banner = `<div class="approval-banner ready">
+        <div class="ab-text"><strong>${t('readyTitle')}</strong> ${t('readyDesc')}</div>
+        <button class="btn tiny" onclick="submitPhase('${escAttr(name)}',${phaseIdx})">${t('submitForApproval')}</button>
+      </div>`;
+    }
+
+    body = `${banner}${renderRoleBar()}${renderTaskList(phase.tasks, {ctxType:'project', ctxId:name, phaseIdx})}`;
+  }
+
+  return `
+    <div class="crumbs">${t('crumbProjects')} / <strong>${escH(name)}</strong></div>
+    <div class="phase-header">
+      <div>
+        <h2>🏗️ ${escH(name)} — ${t('fase')} ${phaseIdx+1}: ${escH(phaseSheet.sheet)}</h2>
+        <div class="meta">${unlocked ? renderPhaseMeta(phase) : t('lockedTitle')}</div>
+      </div>
+      <div class="phase-actions">
+        ${unlocked && !phase.approved && !phase.submitted ? `
+          <button class="btn outline tiny" onclick="markAllInList('project','${escAttr(name)}',${phaseIdx},'done')">${t('btnMarkAll')}</button>
+          <button class="btn outline tiny" onclick="markAllInList('project','${escAttr(name)}',${phaseIdx},'open')">${t('btnUnmarkAll')}</button>` : ''}
+      </div>
+    </div>
+    <div class="phase-tabs">${tabs}</div>
+    ${body}`;
+}
+
+function renderPhaseMeta(phase){
+  const rel = relevantTasks(phase.tasks);
+  const applicable = rel.filter(x=>x.status!=='na');
+  const done = applicable.filter(x=>x.status==='done').length;
+  const naCount = rel.filter(x=>x.status==='na').length;
+  return `${done} ${t('of')} ${applicable.length} ${t('applicable')} · ${naCount} ${t('statNa')}`;
+}
+
+function renderRoleBar(){
+  const chipAll = `<span class="role-chip ${state.role==='all'?'active-chip':''}" onclick="filterRole('all')">${t('filterAll')}</span>`;
+  const chipRoles = ROLES.map(r =>
+    `<span class="role-chip ${state.role===r?'active-chip':''}" onclick="filterRole('${r}')">${r}</span>`).join('');
+  return `<div class="role-bar"><span class="role-bar-label">${t('filterLabel')}</span>${chipAll}${chipRoles}</div>`;
+}
+
+// ── Task list rendering ──────────────────────────────────────────────────────
+function getTaskArray(ctx){
+  if (ctx.ctxType === 'city') return state.cities[ctx.ctxId].tasks;
+  return state.projects[ctx.ctxId].phases[ctx.phaseIdx].tasks;
+}
+
+function setTaskArray(ctx, arr){
+  if (ctx.ctxType === 'city') state.cities[ctx.ctxId].tasks = arr;
+  else state.projects[ctx.ctxId].phases[ctx.phaseIdx].tasks = arr;
+}
+
+function renderTaskList(tasks, ctx){
+  // Group by step||blok preserving order
+  const seen = [], groups = {};
+  tasks.forEach((task, ti) => {
+    const k = task.step + '||' + task.blok;
+    if (!seen.includes(k)) seen.push(k);
+    (groups[k] = groups[k] || []).push({ ...task, _ti: ti });
+  });
+
+  const phaseLocked = ctx.ctxType === 'project'
+    && (state.projects[ctx.ctxId].phases[ctx.phaseIdx].approved
+        || state.projects[ctx.ctxId].phases[ctx.phaseIdx].submitted);
+
+  const ctxStr = `'${ctx.ctxType}','${escAttr(ctx.ctxId)}',${ctx.phaseIdx===null?'null':ctx.phaseIdx}`;
+
+  let html = '';
+  seen.forEach((blokKey, blokIdx) => {
+    const [step, blok] = blokKey.split('||');
+    const blokTasks = groups[blokKey] || [];
+    const filtered = state.role === 'all' ? blokTasks
+      : blokTasks.filter(x => [x.r,x.a,x.s,x.c].some(r => r && r.includes(state.role)));
+    if (!filtered.length && state.role !== 'all') return;
+
+    html += `<div class="blok-group">
+      <div class="blok-header">
+        <span class="blok-step">${escH(step)}</span>${escH(blok)}
+        <div class="blok-reorder">
+          ${blokIdx>0?`<button class="reorder-btn" onclick="moveBlok(${ctxStr},'${escAttr(blokKey)}',-1)">▲</button>`:''}
+          ${blokIdx<seen.length-1?`<button class="reorder-btn" onclick="moveBlok(${ctxStr},'${escAttr(blokKey)}',1)">▼</button>`:''}
+          ${state.adminMode && !phaseLocked ? `<button class="add-row-btn" onclick="promptAddRow(${ctxStr},'${escAttr(blokKey)}')">${t('addRow')}</button>` : ''}
+        </div>
+      </div>`;
+
+    filtered.forEach(task => {
+      const ti = task._ti;
+      const fullTask = tasks[ti];
+      const tags = [
+        task.r?`<span class="rasci-tag rasci-R">R: ${escH(task.r)}</span>`:'',
+        task.a?`<span class="rasci-tag rasci-A">A: ${escH(task.a)}</span>`:'',
+        task.s?`<span class="rasci-tag rasci-S">S: ${escH(task.s)}</span>`:'',
+        task.c?`<span class="rasci-tag rasci-C">C: ${escH(task.c)}</span>`:'',
+      ].filter(Boolean).join('');
+      const customTag = fullTask.custom ? `<span class="custom-tag">${t('customTag')}</span>` : '';
+      const rowCls = ['task-row',
+        fullTask.status==='done'?'done':'',
+        fullTask.status==='na'?'na':'',
+        fullTask.custom?'custom':'',
+      ].filter(Boolean).join(' ');
+
+      const triBtnCls = ['tri-btn',
+        fullTask.status==='done'?'checked':'',
+        fullTask.status==='na'?'na':'',
+      ].filter(Boolean).join(' ');
+      const triGlyph = fullTask.status==='done' ? '✓' : fullTask.status==='na' ? '⊘' : '';
+      const naCls = 'na-toggle' + (fullTask.status==='na' ? ' on' : '');
+
+      const disabledAttr = phaseLocked ? 'disabled' : '';
+      const lockedClick = phaseLocked ? '' : `onclick="cycleTaskDone(${ctxStr},${ti})"`;
+      const naClick = phaseLocked ? '' : `onclick="toggleNa(${ctxStr},${ti})"`;
+
+      html += `<div class="${rowCls}">
+        <div class="tri-cell">
+          <button class="${triBtnCls}" ${lockedClick} title="${t('statDone')}">${triGlyph}</button>
+          <button class="${naCls}" ${naClick} title="${t('naAria')}">${t('naLabel')}</button>
+        </div>
+        <div>
+          <div class="task-name">${escH(task.deliverable)}${customTag}</div>
+          <div class="task-rasci">${tags || (fullTask.custom?'<span style="font-size:11px;color:#888">—</span>':'')}</div>
+        </div>
+        <div class="task-link-wrap">
+          <input type="text" placeholder="${t('linkPlaceholder')||'Link…'}" value="${escH(fullTask.link)}"
+            class="${fullTask.link?'filled':''}" ${disabledAttr}
+            oninput="updateLink(${ctxStr},${ti},this.value)">
+        </div>
+        <div class="task-aside">
+          <div class="task-reorder">
+            ${ti>0?`<button class="reorder-btn" onclick="moveTask(${ctxStr},${ti},-1)">▲</button>`:'<span> </span>'}
+            ${ti<tasks.length-1?`<button class="reorder-btn" onclick="moveTask(${ctxStr},${ti},1)">▼</button>`:'<span> </span>'}
+          </div>
+          ${fullTask.custom ? `<button class="delete-btn" onclick="deleteCustomRow(${ctxStr},${ti})" title="${t('deleteRowConfirm')}">🗑</button>` : ''}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  return html;
+}
+
+// ── Export panel ─────────────────────────────────────────────────────────────
+function renderExportPanel(){
+  let total=0, done=0, na=0, link=0;
+  const collect = arr => {
+    const rel = relevantTasks(arr);
+    rel.forEach(x => {
+      total++;
+      if (x.status==='done') done++;
+      else if (x.status==='na') na++;
+      if (x.link) link++;
+    });
+  };
+  state.cityOrder.forEach(n => collect(state.cities[n].tasks));
+  state.projectOrder.forEach(n => state.projects[n].phases.forEach(p => collect(p.tasks)));
+  const open = total - done - na;
+
+  const oc = document.getElementById('open-count');
+  oc.textContent = open + ' ' + t('statOpen').toLowerCase();
+  oc.style.display = open > 0 ? 'inline' : 'none';
+
+  return `<div class="export-panel">
+    <div>
+      <strong style="font-size:15px">${t('exportTitle')}</strong>
+      <p>${t('exportDesc')}</p>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+      <div class="stats">
+        <div class="stat-item"><div class="val green">${done}</div><div class="lbl">${t('statDone')}</div></div>
+        <div class="stat-item"><div class="val grey">${na}</div><div class="lbl">${t('statNa')}</div></div>
+        <div class="stat-item"><div class="val red">${open}</div><div class="lbl">${t('statOpen')}</div></div>
+        <div class="stat-item"><div class="val">${link}</div><div class="lbl">${t('statLink')}</div></div>
+      </div>
+      <button class="btn success" onclick="exportExcel()">${t('exportBtn')}</button>
+    </div>
+  </div>`;
+}
+
+// ── Actions ──────────────────────────────────────────────────────────────────
+function goBack(){
+  if (state.view){ state.view = null; renderApp(); return; }
+  state.setupDone = false; renderSetup();
+}
+function toggleAdmin(){ state.adminMode = !state.adminMode; renderApp(); }
+function filterRole(r){ state.role = r; renderApp(); }
+function openCity(name){ state.view = {type:'city', id:name}; renderApp(); }
+function openProject(name){ state.view = {type:'project', id:name, phaseIdx:0}; renderApp(); }
+function selectPhase(pi){ if (state.view && state.view.type==='project'){ state.view.phaseIdx = pi; renderApp(); } }
+
+function cycleTaskDone(ctxType, ctxId, phaseIdx, ti){
+  const arr = getTaskArray({ctxType, ctxId, phaseIdx});
+  const task = arr[ti];
+  // From done -> open; from open -> done; from na -> open (clear N/A first).
+  if (task.status === 'done') task.status = 'open';
+  else if (task.status === 'na') task.status = 'open';
+  else task.status = 'done';
+  renderApp();
+}
+
+function toggleNa(ctxType, ctxId, phaseIdx, ti){
+  const arr = getTaskArray({ctxType, ctxId, phaseIdx});
+  const task = arr[ti];
+  task.status = task.status === 'na' ? 'open' : 'na';
+  renderApp();
+}
+
+function updateLink(ctxType, ctxId, phaseIdx, ti, val){
+  const arr = getTaskArray({ctxType, ctxId, phaseIdx});
+  arr[ti].link = val;
+  if (event && event.target) event.target.classList.toggle('filled', !!val);
+}
+
+function markAllInList(ctxType, ctxId, phaseIdx, target){
+  const arr = getTaskArray({ctxType, ctxId, phaseIdx});
+  const rel = relevantTasks(arr);
+  rel.forEach(item => {
+    const idx = arr.findIndex(x => x.id === item.id);
+    if (idx < 0) return;
+    if (target === 'done'){
+      if (arr[idx].status !== 'na') arr[idx].status = 'done';
+    } else {
+      if (arr[idx].status !== 'na') arr[idx].status = 'open';
+    }
+  });
+  renderApp();
+}
+
+function moveTask(ctxType, ctxId, phaseIdx, ti, dir){
+  const arr = getTaskArray({ctxType, ctxId, phaseIdx});
+  const ni = ti + dir;
+  if (ni < 0 || ni >= arr.length) return;
+  // Only reorder within the same blok
+  if (arr[ti].blok !== arr[ni].blok || arr[ti].step !== arr[ni].step) return;
+  [arr[ti], arr[ni]] = [arr[ni], arr[ti]];
+  renderApp();
+}
+
+function moveBlok(ctxType, ctxId, phaseIdx, blokKey, dir){
+  const arr = getTaskArray({ctxType, ctxId, phaseIdx});
+  const order = [...new Set(arr.map(x => x.step + '||' + x.blok))];
+  const idx = order.indexOf(blokKey);
+  const ni = idx + dir;
+  if (ni < 0 || ni >= order.length) return;
+  [order[idx], order[ni]] = [order[ni], order[idx]];
+  const groups = {};
+  arr.forEach(x => { const k = x.step+'||'+x.blok; (groups[k]=groups[k]||[]).push(x); });
+  setTaskArray({ctxType, ctxId, phaseIdx}, order.flatMap(k => groups[k] || []));
+  renderApp();
+}
+
+function promptAddRow(ctxType, ctxId, phaseIdx, blokKey){
+  const name = window.prompt(t('addRowPrompt'));
+  if (!name || !name.trim()) return;
+  const arr = getTaskArray({ctxType, ctxId, phaseIdx});
+  const newTask = makeCustomTask(blokKey, name.trim());
+  // Insert after the last task in that blok
+  let insertAt = arr.length;
+  for (let i = arr.length - 1; i >= 0; i--){
+    if (arr[i].step + '||' + arr[i].blok === blokKey){ insertAt = i + 1; break; }
+  }
+  arr.splice(insertAt, 0, newTask);
+  renderApp();
+}
+
+function deleteCustomRow(ctxType, ctxId, phaseIdx, ti){
+  const arr = getTaskArray({ctxType, ctxId, phaseIdx});
+  if (!arr[ti] || !arr[ti].custom) return;
+  if (!window.confirm(t('deleteRowConfirm'))) return;
+  arr.splice(ti, 1);
+  renderApp();
+}
+
+// ── Phase approval ───────────────────────────────────────────────────────────
+function submitPhase(name, pi){
+  const ph = state.projects[name].phases[pi];
+  if (!isPhaseReady(ph)) return;
+  ph.submitted = true;
+  renderApp();
+}
+function withdrawPhase(name, pi){
+  state.projects[name].phases[pi].submitted = false;
+  renderApp();
+}
+function approvePhase(name, pi){
+  if (!isApprover()) { alert(t('needsApprover')); return; }
+  const ph = state.projects[name].phases[pi];
+  ph.submitted = false;
+  ph.approved = true;
+  renderApp();
+}
+function rejectPhase(name, pi){
+  if (!isApprover()) { alert(t('needsApprover')); return; }
+  state.projects[name].phases[pi].submitted = false;
+  renderApp();
+}
+function reopenPhase(name, pi){
+  if (!isApprover()) { alert(t('needsApprover')); return; }
+  const proj = state.projects[name];
+  // reopening cascades: any later approved phases stay, but unlock state depends only on this phase.
+  // Per requirement we just clear approval. Let user re-approve.
+  proj.phases[pi].approved = false;
+  proj.phases[pi].submitted = false;
+  renderApp();
+}
+
+// ── Add city / project ───────────────────────────────────────────────────────
+function promptAddCity(){
+  const name = window.prompt(t('namePromptCity'));
+  if (!name || !name.trim()) return;
+  const trimmed = name.trim();
+  if (state.cities[trimmed]) { alert(t('duplicateName')); return; }
+  addCityInternal(trimmed);
+  state.view = {type:'city', id: trimmed};
+  renderApp();
+}
+function promptAddProject(){
+  const name = window.prompt(t('namePromptProject'));
+  if (!name || !name.trim()) return;
+  const trimmed = name.trim();
+  if (state.projects[trimmed]) { alert(t('duplicateName')); return; }
+  addProjectInternal(trimmed);
+  state.view = {type:'project', id: trimmed, phaseIdx:0};
+  renderApp();
+}
+
+// ── Excel export ─────────────────────────────────────────────────────────────
+function statusToText(s){ return s==='done' ? 'Klaar/Done' : s==='na' ? 'N.v.t./N/A' : 'Open'; }
+
+function exportExcel(){
+  const wb = XLSX.utils.book_new();
+  const today = new Date().toLocaleDateString('nl-NL');
+
+  const intro = XLSX.utils.aoa_to_sheet([
+    ['Fasedocument Tracker — Export'],[''],
+    ['Export: ' + today],
+    ['Steden / Cities: ' + state.cityOrder.join(', ')],
+    ['Projecten / Projects: ' + state.projectOrder.join(', ')],
+  ]);
+  XLSX.utils.book_append_sheet(wb, intro, 'Overview');
+
+  const header = ['Step','Blok','Deliverable','Status','Link','R','A','S','C','I','Custom'];
+
+  state.cityOrder.forEach(name => {
+    const rows = [['City: ' + name],[],header];
+    state.cities[name].tasks.forEach(x => {
+      rows.push([x.step, x.blok, x.deliverable, statusToText(x.status), x.link||'', x.r, x.a, x.s, x.c, x.i, x.custom?'yes':'']);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:8},{wch:32},{wch:46},{wch:14},{wch:36},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:8}];
+    const safe = ('City_' + name).replace(/[^a-zA-Z0-9_]/g,'_').slice(0,30);
+    XLSX.utils.book_append_sheet(wb, ws, safe);
+  });
+
+  state.projectOrder.forEach(pname => {
+    state.projects[pname].phases.forEach((phase, pi) => {
+      const sheetName = PROJECT_PHASES[pi].sheet;
+      const status = phase.approved ? 'Approved' : phase.submitted ? 'Submitted' : 'In progress';
+      const rows = [
+        ['Project: ' + pname],
+        ['Phase ' + (pi+1) + ': ' + sheetName],
+        ['Phase status: ' + status],
+        [], header,
+      ];
+      phase.tasks.forEach(x => {
+        rows.push([x.step, x.blok, x.deliverable, statusToText(x.status), x.link||'', x.r, x.a, x.s, x.c, x.i, x.custom?'yes':'']);
+      });
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{wch:8},{wch:32},{wch:46},{wch:14},{wch:36},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:8}];
+      const tabName = (pname.slice(0,10) + '_P' + (pi+1) + '_' + sheetName).replace(/[^a-zA-Z0-9_]/g,'_').slice(0,30);
+      XLSX.utils.book_append_sheet(wb, ws, tabName);
+    });
+  });
+
+  const date = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `fasedocument_v2_${date}.xlsx`);
+}
+
+init();
+</script>
+</body>
+</html>

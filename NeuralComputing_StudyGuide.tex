@@ -1,0 +1,1413 @@
+\documentclass[11pt,a4paper]{article}
+
+% --- PACKAGES ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+
+% --- COLORS (Leiden inspired) ---
+\definecolor{leidenblue}{RGB}{0, 30, 90}
+\definecolor{leidenlight}{RGB}{135, 152, 195}
+\definecolor{accentgreen}{RGB}{180, 198, 80}
+\definecolor{boxgray}{RGB}{245, 245, 250}
+
+% --- HYPERREF ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=leidenblue,
+    urlcolor=leidenblue,
+    citecolor=leidenblue,
+    pdftitle={Neural Computing Study Guide},
+    pdfauthor={Alessandro Garcia}
+}
+
+% --- TITLE FORMATTING ---
+\titleformat{\section}
+    {\color{leidenblue}\Large\bfseries\raggedright}{\thesection}{1em}{}[\titlerule]
+\titleformat{\subsection}
+    {\color{leidenblue}\large\bfseries\raggedright}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+    {\color{leidenblue}\normalsize\bfseries\raggedright}{\thesubsubsection}{1em}{}
+
+% --- HEADER/FOOTER ---
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{leidenblue}\small\textit{Neural Computing -- Study Guide}}
+\fancyhead[R]{\color{leidenblue}\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{leidenblue}\leaders\hrule height \headrulewidth\hfill}}
+
+% --- CUSTOM BOXES ---
+\newtcolorbox{definitionbox}[1][]{
+    enhanced,
+    colback=boxgray,
+    colframe=leidenblue,
+    fonttitle=\bfseries\color{white},
+    coltitle=white,
+    title=Definition,
+    boxrule=0.5pt,
+    arc=2mm,
+    left=4mm,
+    right=4mm,
+    top=2mm,
+    bottom=2mm,
+    #1
+}
+
+\newtcolorbox{keybox}[1][]{
+    enhanced,
+    colback=yellow!8,
+    colframe=orange!70!black,
+    fonttitle=\bfseries\color{white},
+    coltitle=white,
+    title=Key Idea,
+    boxrule=0.5pt,
+    arc=2mm,
+    left=4mm,
+    right=4mm,
+    top=2mm,
+    bottom=2mm,
+    #1
+}
+
+\newtcolorbox{theorembox}[1][]{
+    enhanced,
+    colback=blue!4,
+    colframe=leidenblue,
+    fonttitle=\bfseries\color{white},
+    coltitle=white,
+    title=Theorem,
+    boxrule=0.5pt,
+    arc=2mm,
+    left=4mm,
+    right=4mm,
+    top=2mm,
+    bottom=2mm,
+    #1
+}
+
+\newtcolorbox{examplebox}[1][]{
+    enhanced,
+    colback=accentgreen!10,
+    colframe=accentgreen!80!black,
+    fonttitle=\bfseries\color{white},
+    coltitle=white,
+    title=Example,
+    boxrule=0.5pt,
+    arc=2mm,
+    left=4mm,
+    right=4mm,
+    top=2mm,
+    bottom=2mm,
+    #1
+}
+
+\newtcolorbox{warningbox}[1][]{
+    enhanced,
+    colback=red!5,
+    colframe=red!70!black,
+    fonttitle=\bfseries\color{white},
+    coltitle=white,
+    title=Caveat / Pitfall,
+    boxrule=0.5pt,
+    arc=2mm,
+    left=4mm,
+    right=4mm,
+    top=2mm,
+    bottom=2mm,
+    #1
+}
+
+% --- MATH SHORTCUTS ---
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\vw}{\vec{w}}
+\newcommand{\vx}{\vec{x}}
+\newcommand{\vy}{\vec{y}}
+\newcommand{\vh}{\vec{h}}
+\newcommand{\vC}{\vec{C}}
+\newcommand{\sgn}{\text{sgn}}
+
+% --- TITLE PAGE ---
+\begin{document}
+
+\thispagestyle{empty}
+
+\begin{center}
+\vspace*{0.5cm}
+{\color{leidenblue}\Huge\bfseries Neural Computing}\\[0.5em]
+{\color{leidenlight}\Large Comprehensive Study Guide}\\[0.3em]
+{\large \textit{Leiden University -- LIACS}}\\[0.5em]
+{\normalsize Based on lectures by Elena Raponi}\\[0.2em]
+{\normalsize Academic Year 2025--2026}
+
+\vspace{1.5cm}
+
+\begin{tcolorbox}[colback=boxgray, colframe=leidenblue, width=\textwidth, arc=3mm]
+\centering
+\textbf{Course Coverage}
+\smallskip
+
+\textit{Biological foundations $\cdot$ McCulloch--Pitts \& Perceptron $\cdot$ Hopfield Networks $\cdot$
+Multi-layer Perceptron \& Backpropagation $\cdot$ Convolutional Neural Networks $\cdot$
+Recurrent Neural Networks \& LSTM $\cdot$ Generative Models $\cdot$ Universal Approximation Theorem}
+\end{tcolorbox}
+\end{center}
+
+\newpage
+
+% ===========================================================
+\section{Introduction and Fundamentals}
+% ===========================================================
+
+\subsection{What is Neural Computing?}
+
+Neural Computing studies computational models inspired by the human brain. The discipline focuses on:
+\begin{itemize}[leftmargin=*]
+    \item Understanding the \textbf{fundamental principles} of neural computation.
+    \item Learning the major neural network models (convolutional, recurrent, generative).
+    \item Practical implementation using frameworks (e.g., PyTorch).
+    \item Tackling computational tasks such as image classification, time-series forecasting, and generation.
+\end{itemize}
+
+\subsection{Biological Background}
+
+\subsubsection{The Biological Neuron}
+
+A \emph{neuron} is a cell that transforms and transmits information via electrical and chemical signals. It is:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Electrically excitable} (or inhibited).
+    \item \textbf{Interconnected} via synapses.
+    \item Capable of rapidly propagating signals over large distances.
+\end{itemize}
+
+\begin{definitionbox}[title=Neuron Morphology]
+\begin{description}
+    \item[Dendrites] Receive inputs from other neurons.
+    \item[Axon] Carries the neuronal output to other cells.
+    \item[Soma] The cell body, containing the cell nucleus.
+    \item[Synapses] Connection points between two neurons.
+\end{description}
+\end{definitionbox}
+
+\subsubsection{Physical Features and Neurotransmission}
+
+\textbf{Ion channels on the membrane} include pumps of ions ($\mathrm{Na}^+, \mathrm{K}^+, \mathrm{Ca}^{2+}, \mathrm{Cl}^-$).
+
+\textbf{Membrane potential} is the difference in electrical potential between the interior of a neuron and the extracellular medium:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Depolarization}: $\mathrm{Na}^+$ ions flow inside the cell, making the membrane potential \emph{less negative} $\Rightarrow$ \textbf{excitatory}.
+    \item \textbf{Hyperpolarization}: $\mathrm{K}^+$ ions flow out, making the membrane potential \emph{more negative} $\Rightarrow$ \textbf{inhibitory}.
+\end{itemize}
+
+\textbf{Action potential (spike)} is the only signal that propagates over long distances and carries information.
+
+\subsubsection{Why the Brain Inspires AI}
+
+\begin{itemize}[leftmargin=*]
+    \item Robust and fault tolerant.
+    \item Flexible (adjusts to new environments by learning).
+    \item Handles fuzzy/noisy/probabilistic information.
+    \item Highly parallel.
+    \item Compact and energy-efficient.
+\end{itemize}
+
+\subsection{Neural Dynamics}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Absolute refractory period}: the minimal temporal distance between two spikes.
+    \item \textbf{Relative refractory period}: a phase where firing a spike is difficult but not impossible.
+    \item \textbf{Postsynaptic Potential (PSP)}: transient impact of incoming spikes; attenuates over time; additive in the model.
+    \item A spike is generated if the cumulated membrane potential \emph{reaches the threshold from below}.
+\end{itemize}
+
+\subsection{Artificial Neurons}
+
+\subsubsection{The McCulloch--Pitts Model (1943)}
+
+\begin{definitionbox}[title=McCulloch--Pitts Neuron]
+\[
+O = \sgn\!\left(\sum_i w_i x_i\right), \qquad \sgn(u) =
+\begin{cases}
++1 & \text{if } u \geq 0\\
+-1 & \text{if } u < 0
+\end{cases}
+\]
+\end{definitionbox}
+
+In this model:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Spikes} $\to$ interpreted as spike rates (firing rate).
+    \item \textbf{Synaptic strength} $\to$ translated as \emph{weights}.
+    \item \textbf{Excitation} = positive product between input and corresponding weight.
+    \item \textbf{Inhibition} = negative product between input and corresponding weight.
+\end{itemize}
+
+\subsubsection{The Perceptron}
+
+A perceptron is an artificial neuron with a sign (or Heaviside step) activation function, also called a \textbf{threshold unit}:
+\[
+O = \sgn(\vw^\top \vx + b)
+\]
+It is a \textbf{linear binary classifier} with decision boundary $\vw^\top \vx + b = 0$.
+
+\textbf{Generalization}: replace the threshold unit with non-linear functions to get real-valued outputs.
+
+\subsection{Network Architectures Overview}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Feed-forward Network}: layered, \emph{no cycles}. Topologies: fully connected, randomly connected, optimized (architecture search).
+    \item \textbf{Recurrent Network}: contains cycles, is a \emph{dynamical system}, internal state evolves over time; training is more difficult.
+    \item \textbf{Hopfield Network}: an associative memory that can store patterns and retrieve them from noisy inputs (John J. Hopfield won the 2024 Nobel Prize in Physics for this contribution).
+\end{itemize}
+
+\newpage
+% ===========================================================
+\section{The Hopfield Network}
+% ===========================================================
+
+\subsection{Motivation: Associative Memory}
+
+\begin{definitionbox}[title=Associative Memory]
+Also known as \emph{content-addressable memory}, recall is triggered by the \textbf{similarity} between an input pattern and a stored one. It deals with \textbf{incomplete or noisy information}.
+\end{definitionbox}
+
+The Hopfield Network (HN) is a \textbf{recurrent neural network} capable of storing and retrieving \emph{multiple} memories. It is inspired by the \textbf{Ising model} from physics, which describes the magnetic behavior of ferromagnetic materials.
+
+\subsection{Structure of a Hopfield Network}
+
+In a Hopfield Network, each unit has three primary characteristics:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Connectivity}: every neuron is connected to all other neurons; each connection has a weight (analogous to synaptic strength) stored in a weight matrix. \textbf{Connections are symmetric}: $w_{ij} = w_{ji}$.
+    \item \textbf{Activation}: net input from other neurons through connection weights (analogous to membrane potential).
+    \item \textbf{Bipolar state}: output computed via a thresholding function, restricted to values in $\{-1, +1\}$.
+\end{enumerate}
+
+\subsection{Formal Definition}
+
+The general dynamic update rule is:
+\[
+O_i(t+1) = g\!\left(\sum_j w_{ij}\, O_j(t) + b_i\right)
+\]
+where $g$ can be $\tanh$ or sigmoid. In the discrete/simplified version:
+\[
+O_i(t+1) = \sgn\!\left(\sum_j w_{ij}\, O_j(t)\right)
+\]
+
+\subsection{Stability Condition and Attractors}
+
+\begin{definitionbox}[title=Stable Pattern]
+Given a stored pattern $\vec{\xi}$, the stability condition is:
+\[
+O_i = \sgn\!\left(\sum_j w_{ij}\, \xi_j\right) = \xi_i
+\]
+\end{definitionbox}
+
+If we set the weights to $w_{ij} \propto \xi_i \xi_j$, the network will reproduce the stored pattern $\vec{\xi}$ (the pattern is an \textbf{attractor}). Stable states partition the input space into \textbf{attracting basins}.
+
+\subsection{Multiple Stored Patterns}
+
+To store multiple patterns $\{\vec{\xi}^1, \vec{\xi}^2, \ldots, \vec{\xi}^P\}$, the weights are defined as a \textbf{superposition of terms}:
+\[
+w_{ij} = \frac{1}{N}\sum_{\mu=1}^{P} \xi_i^{\mu} \xi_j^{\mu}
+\]
+
+This allows:
+\begin{itemize}[leftmargin=*]
+    \item Associative memory: partial inputs can retrieve full patterns.
+    \item Efficient use of the network's capacity.
+    \item Pattern recognition applications.
+\end{itemize}
+
+\subsection{Storage Capacity}
+
+\begin{keybox}
+The \textbf{storage capacity} of a Hopfield Network refers to the maximum number of patterns it can store and accurately retrieve ($P_{\max}$). Empirically, $P_{\max} \approx 0.15\,N$, where $N$ is the number of neurons.
+\end{keybox}
+
+If too many patterns are stored, retrieval becomes unreliable due to \textbf{interference} and \textbf{spurious states}.
+
+\textbf{Ways to improve capacity:}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Sparse coding}: only a fraction of neurons activate per pattern.
+    \item \textbf{Modified learning rules} (e.g., Storkey Learning Rule).
+    \item \textbf{More neurons}: increasing $N$ directly increases $P_{\max}$.
+    \item \textbf{Hierarchical Networks}: structured memory reduces interference.
+\end{itemize}
+
+\subsection{Energy Function}
+
+\begin{theorembox}[title=Energy Function]
+\[
+E(\vx) = -\frac{1}{2}\vx^\top \mathbf{W}\vx - \vx^\top \vec{b}
+\]
+\end{theorembox}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Stable states} are the minimizers of the energy function.
+    \item The Energy function monotonically \textbf{decreases} with each update.
+    \item One can use \emph{automatic gradient descent} on this formula to find the weights.
+\end{itemize}
+
+\newpage
+% ===========================================================
+\section{The Simple Perceptron}
+% ===========================================================
+
+\subsection{Hebbian Learning}
+
+\begin{keybox}[title=Hebb's Postulate (1949)]
+``When an axon in cell $A$ is near enough to \emph{excite cell $B$ and repeatedly and persistently takes part in firing it}, some growth process or metabolic change takes place in one or both cells such that \emph{$A$'s efficiency in firing $B$ is increased}.''
+\end{keybox}
+
+In modern terms: \textbf{when two neurons fire together, the connection between them is strengthened}. This is the fundamental operation for learning and memorization.
+
+\[
+\Delta w_1(t) \propto x(t)\, y(t)
+\]
+
+\subsection{Network Components}
+
+An \textbf{Artificial Neural Network} is characterized by three aspects:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Architecture/topology}: nodes and connections with corresponding weights.
+    \item \textbf{Node characteristics}: notably, the activation function.
+    \item \textbf{Learning rules}: algorithms used to train the network to produce desired outputs for given inputs.
+\end{itemize}
+
+\subsection{Activation Functions}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Name} & \textbf{Equation} & \textbf{Range} \\
+\midrule
+Identity & $f(x) = x$ & $(-\infty,\infty)$ \\
+Binary step (Heaviside) & $f(x)= 0$ if $x<0$, $1$ otherwise & $\{0,1\}$ \\
+Logistic (Sigmoid) & $\sigma(x) = \frac{1}{1+e^{-x}}$ & $(0,1)$ \\
+TanH & $\tanh(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}$ & $(-1,1)$ \\
+ReLU & $f(x) = \max\{0, x\}$ & $[0,\infty)$ \\
+GELU & $f(x) = x\,\Phi(x)$ & $(\approx-0.17,\infty)$ \\
+SoftPlus & $f(x) = \ln(1+e^x)$ & $(0,\infty)$ \\
+ELU & $\alpha(e^x-1)$ for $x\le0$, $x$ otherwise & $(-\alpha, \infty)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Three classical neuron types:}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Threshold neuron}: Heaviside / sign function.
+    \item \textbf{Saturation neuron}: piecewise-linear function.
+    \item \textbf{Sigmoidal neuron}: logistic function or hyperbolic tangent.
+\end{itemize}
+
+\subsection{Learning Rule of the Simple Perceptron}
+
+\begin{definitionbox}[title=Learning vs. Training]
+\textbf{Learning} = ability to modify proper characteristics (e.g., weights and biases) according to changes in the environment.
+
+\textbf{Training} is typically accomplished via examples; network parameters are adapted using a learning algorithm.
+
+\textbf{Epoch} = a complete run where the entire training set is presented and used by the learning algorithm.
+\end{definitionbox}
+
+The simple perceptron has only input and output layers (no hidden layers). For each output $O_i$ ($i=1,\ldots,M$):
+\[
+O_i = \sgn(\vec{w}^{i\top} \vec{\xi} + b_i)
+\]
+
+\textbf{Threshold incorporation}: the bias $b_i$ can be incorporated in the scalar product by introducing an additional input node fixed to 1.
+
+\subsubsection{Hebbian Learning for the Perceptron}
+
+Given a dataset $\{(\vx^p, y^p)\}_{p=1}^{P}$ with $\vx^p\in\R^d$, $y^p\in\{-1,+1\}$:
+\[
+O^p = \sgn(\vec{w}^\top \vec{x}^p + b)
+\]
+
+The goal: find $\vec{w}$ and $b$ such that $O^p = y^p$ for all $p$.
+
+\begin{keybox}[title=Update Rule]
+\[
+\vec{w}' = \vec{w} + \Delta\vec{w}, \qquad
+\Delta w_j = \begin{cases}
+2\eta\, y_p\, x_j^p & \text{if } O_p \neq y_p\\
+0 & \text{otherwise}
+\end{cases}
+\]
+where $0 < \eta < 1$ is the \textbf{learning rate}.
+\end{keybox}
+
+\textbf{Equivalent update formulas:}
+\[
+\Delta_j = \eta(1 - O_p\, y_p)\, x_j^p\, y_p, \qquad
+\Delta_j = \eta(y_p - O_p)\, x_j^p
+\]
+
+\subsection{Linear Separability}
+
+\begin{definitionbox}[title=Linear Separability]
+Data are \emph{linearly separable} when there exists a weight vector $\vec{w}$ such that:
+\[
+\vec{w}^\top \vx > 0 \text{ if } y = +1, \qquad \vec{w}^\top \vx < 0 \text{ if } y = -1
+\]
+\end{definitionbox}
+
+Using $\hat{x}^p = y_p\, x^p$, the condition becomes:
+\[
+\vec{w}^\top \hat{x}^p > 0, \quad p = 1,\ldots,P
+\]
+
+\subsubsection{The AND Function (linearly separable)}
+
+A valid solution: $w_1 = 1$, $w_2 = 1$, $w_3 = \theta = 1.5$.
+
+\subsubsection{The XOR Problem (NOT linearly separable)}
+
+\begin{warningbox}
+The XOR function CANNOT be solved by a single perceptron! The constraints lead to a contradiction:
+\begin{itemize}[leftmargin=*]
+    \item From rows (d) and (b): $w_1 + w_2 < w_3 < -w_1 + w_2$, so $w_1 < 0$.
+    \item From rows (a) and (c): $-w_1 - w_2 < w_3 < w_1 - w_2$, so $w_1 > 0$.
+\end{itemize}
+$\Rightarrow$ contradiction!
+\end{warningbox}
+
+\textbf{Solution}: use \emph{two} decision boundaries $g_1(\vx)$ and $g_2(\vx)$, and pass them through threshold functions $y_1 = \sgn(g_1(\vx))$, $y_2 = \sgn(g_2(\vx))$. This maps the input to a new space where the classes are linearly separable. This is the motivation for the \textbf{multi-layer perceptron}.
+
+\subsection{Perceptron Optimality}
+
+Instead of just requiring the sign to be correct, demand a \textbf{margin}:
+\[
+y_p\, \vec{w}^\top \vx^p > N\rho
+\]
+for some fixed positive $\rho$ ($N$ keeps the margin fixed for any number of inputs).
+
+The update rule becomes:
+\[
+\Delta_j = \eta\, \Theta(N\rho - y_p\, \vec{w}^\top \vx^p)\, x_j^p\, y_p
+\]
+where $\Theta$ is the unit step function.
+
+\begin{keybox}[title=Optimal Weight Vector (Support Vector Machine Idea)]
+The optimal $\vec{w}$ \textbf{maximizes the margin} (the distance from the decision boundary to the closest correctly-classified point):
+\[
+\vec{w}^* = \arg\max_{\vec{w}} M(\vec{w}) = \arg\max_{\vec{w}} \min_{p\in[1..P]} \frac{\vec{w}^\top \hat{x}^p}{\|\vec{w}\|}
+\]
+This is a \textbf{maximin problem} -- the key idea behind \emph{Support Vector Machines}.
+\end{keybox}
+
+\newpage
+% ===========================================================
+\section{Multi-Layer Perceptron and Backpropagation}
+% ===========================================================
+
+\subsection{From Perceptron to MLP}
+
+\begin{itemize}[leftmargin=*]
+    \item The \textbf{hidden layer} functions to \textbf{extract features}.
+    \item The \textbf{output layer} implements the \textbf{decision function}.
+    \item By adding up to 2 hidden layers of perceptrons, one can represent any union of intersections of half-spaces (\textbf{Universal Approximation}).
+\end{itemize}
+
+\subsection{Deep Networks vs Shallow ML}
+
+\textbf{Deep Neural Networks} are simply feedforward networks with many hidden layers. The crucial difference from traditional ML lies in \textbf{how} they process information:
+\begin{itemize}[leftmargin=*]
+    \item Deep networks learn \textbf{hierarchical representations} from data.
+    \item They \textbf{automatically extract complex features} at different layers (low-level $\to$ high-level).
+\end{itemize}
+
+\subsection{Recap: Derivatives and Gradient}
+
+\textbf{Univariate derivative:}
+\[
+f'(x) = \frac{df}{dx} = \lim_{\Delta x \to 0}\frac{f(x+\Delta x)-f(x)}{\Delta x}
+\]
+
+\textbf{Partial derivative} for multivariate $f:\R^n \to \R$:
+\[
+\frac{\partial f}{\partial x_i} = \lim_{\varepsilon \to 0}\frac{f(\vx + \varepsilon \vec{e}_i) - f(\vx)}{\varepsilon}
+\]
+
+\textbf{Gradient} (collects all partial derivatives):
+\[
+\nabla f = \left(\frac{\partial f}{\partial x_1}, \ldots, \frac{\partial f}{\partial x_n}\right)^\top
+\]
+The gradient is the \textbf{steepest ascending direction}.
+
+\subsubsection{Chain Rule}
+
+\textbf{Univariate}: $(g(f(x)))' = g'(f(x))\, f'(x)$
+
+\textbf{Multivariate}: for $O = g(\vec{f}(\vx))$,
+\[
+\frac{\partial O}{\partial x_i} = \sum_{k=1}^d \frac{\partial O}{\partial f_k}\frac{\partial f_k}{\partial x_i}
+\]
+
+\subsection{Gradient Descent}
+
+For a perceptron, define the squared-error loss:
+\[
+L(\vec{w}, \vx^p) = \tfrac{1}{2}(y_p - \vec{w}^\top \vx^p)^2
+\]
+
+The gradient w.r.t. $w_k$ is:
+\[
+\frac{\partial L}{\partial w_k} = -(y_p - O_p)\, x_k^p
+\]
+
+\begin{keybox}[title=Gradient Descent Update]
+\[
+w_k \leftarrow w_k - \eta\, \frac{\partial L}{\partial w_k}
+\quad\Longleftrightarrow\quad
+\Delta w_k = \eta(y_p - O_p)\, x_k^p
+\]
+This re-discovers \textbf{Hebb's rule}!
+\end{keybox}
+
+The \textbf{step size $\eta$} is critical:
+\begin{itemize}[leftmargin=*]
+    \item Too small ($\eta = 0.01$): convergence is slow but stable.
+    \item Too large ($\eta = 0.041$): oscillation and divergence.
+    \item Moderate ($\eta = 0.035$): zig-zag convergence.
+\end{itemize}
+
+\subsection{The Backpropagation Algorithm}
+
+\subsubsection{Notation}
+
+\begin{itemize}[leftmargin=*]
+    \item $w_{ij}^{(k)}$: weight for node $i$ in layer $k$ for input $j$.
+    \item $b_i^{(k)}$: bias for node $i$ in layer $k$.
+    \item $h_i^{(k)}$: sum of inputs for node $i$ in layer $k$.
+    \item $O_i^{(k)}$: output for node $i$ in layer $k$.
+    \item $n_k$: number of nodes in layer $k$.
+\end{itemize}
+
+Recall:
+\[
+O_i^{(k)} = g(h_i^{(k)}) = g\!\left(\sum_{j=1}^{n_{k-1}} w_{ij}^{(k)}\, O_j^{(k-1)} + b_i^{(k)}\right)
+\]
+
+\subsubsection{Step-by-Step Derivation}
+
+\textbf{Step 1 -- Computation Graph}: represent inputs $x$, weights $w$, biases $b$, hidden activations $h$, outputs $O$, label $y$, and loss $L$ as a graph.
+
+\textbf{Step 2 -- Univariate Chain Rule}:
+\begin{align*}
+\frac{\partial L}{\partial w} &= \frac{\partial L}{\partial O}\frac{\partial O}{\partial h}\frac{\partial h}{\partial w} = \delta\, x \\
+\frac{\partial L}{\partial b} &= \delta
+\end{align*}
+where the \textbf{error term} is $\delta = \frac{\partial L}{\partial O}\frac{\partial O}{\partial h} = \frac{\partial L}{\partial O}\, g'(h)$.
+
+\textbf{Step 3 -- Error term for layer $k$}:
+\[
+\delta_i^{(k)} = \frac{\partial L}{\partial h_i^{(k)}} = g'(h_i^{(k)})\,\frac{\partial L}{\partial O_i^{(k)}}
+\]
+
+The gradients for the weight and bias are:
+\[
+\frac{\partial L}{\partial w_{ij}^{(k)}} = O_j^{(k-1)}\,\delta_i^{(k)} \quad\text{(Hebb's rule!)}, \qquad
+\frac{\partial L}{\partial b_i^{(k)}} = \delta_i^{(k)}
+\]
+
+\textbf{Step 4 -- Backpropagating the error}:
+\[
+\delta_j^{(k-1)} = g'(h_j^{(k-1)})\sum_{i=1}^{n_k} w_{ij}^{(k)}\,\delta_i^{(k)}
+\]
+
+\subsubsection{The BP Algorithm Summary}
+
+\begin{tcolorbox}[colback=boxgray, colframe=leidenblue, title=\textbf{Backpropagation Algorithm}]
+\textbf{1. Forward phase}: for each input-output pair $(\vx, y)$, starting from the first layer, calculate and store the quantities $O_i^{(k)}$ and $h_i^{(k)}$ for each node.
+
+\smallskip
+\textbf{2. Backward phase}: for the output layer, compute:
+\[
+\delta^{\text{out}} = g'(h^{\text{out}})(y - O)
+\]
+While moving back to the first layer:
+\begin{itemize}[leftmargin=*]
+    \item Compute the gradient for each weight and bias:
+    $\frac{\partial L}{\partial w_{ij}^{(k)}} = O_j^{(k-1)}\,\delta_i^{(k)}$.
+    \item Backpropagate the error: $\delta_j^{(k-1)} = g'(h_j^{(k-1)})\sum_{i=1}^{n_k} w_{ij}^{(k)}\delta_i^{(k)}$.
+    \item $k \leftarrow k - 1$.
+\end{itemize}
+
+\smallskip
+\textbf{3. Gradient descent}: for each weight,
+\[
+w_{ij}^{(k)} \leftarrow w_{ij}^{(k)} - \eta\,\frac{\partial L}{\partial w_{ij}^{(k)}}
+\]
+\end{tcolorbox}
+
+\subsection{Variants of Gradient Descent}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Batch Gradient Descent}: use the whole dataset to compute the average gradient.
+    \begin{itemize}
+        \item \textbf{Pros}: precise, less random.
+        \item \textbf{Cons}: additional storage.
+    \end{itemize}
+    \item \textbf{Stochastic Gradient Descent (SGD)}: take a random data point and compute the gradient with it.
+    \begin{itemize}
+        \item \textbf{Pros}: less storage, superior for redundant data.
+        \item \textbf{Cons}: increased oscillations.
+    \end{itemize}
+    \item \textbf{Mini-batch Gradient Descent}: take a random subset (batch) and compute the gradient only on this subset.
+\end{enumerate}
+
+\subsubsection{Key Terminology}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Batch size}: total number of training data points in a single batch (commonly powers of 2: 32, 64, 128).
+    \item \textbf{Iteration/step}: the number of batches needed to complete one epoch.
+    \item \textbf{Epoch}: one forward+backward pass over the whole training set.
+\end{itemize}
+
+\subsection{Overfitting and Generalization}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Underfitting}: model is too simple to capture the data.
+    \item \textbf{Good fit / Robust}: balances training and validation loss.
+    \item \textbf{Overfitting}: model memorizes the training data but fails on validation/test data.
+\end{itemize}
+
+\textbf{Early stopping}: monitor validation loss; stop training when it starts to increase.
+
+\subsection{Advanced Optimizers}
+
+Vanilla gradient descent can get stuck in local optima or plateaus. Modern optimizers improve convergence:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Momentum}, Nesterov Accelerated Gradient.
+    \item \textbf{Adagrad}, Adadelta, RMSprop.
+    \item \textbf{Adam}, AdaMax, Nadam, AMSGrad.
+\end{itemize}
+
+\subsubsection{Gradient Descent with Momentum}
+
+\begin{keybox}
+\[
+v_{ij}^{(k)} \leftarrow \gamma\, v_{ij}^{(k)} + \eta\,\frac{\partial L}{\partial w_{ij}^{(k)}}
+\]
+\[
+w_{ij}^{(k)} \leftarrow w_{ij}^{(k)} - v_{ij}^{(k)}
+\]
+$v_{ij}^{(k)}$ is initialized to zero; $\gamma, \eta \in (0,1)$.
+\end{keybox}
+
+Momentum accumulates a velocity vector that smooths the update direction and helps escape shallow local minima.
+
+\newpage
+% ===========================================================
+\section{Convolutional Neural Networks (CNNs)}
+% ===========================================================
+
+\subsection{Motivation: Computer Vision}
+
+\textbf{Sight is one of the most important senses.} Computer Vision tackles:
+\begin{itemize}[leftmargin=*]
+    \item Image classification.
+    \item Object detection.
+    \item Segmentation (semantic / instance).
+    \item Image captioning.
+\end{itemize}
+
+\textbf{Applications}: self-driving cars, medical imaging (cancer detection), accessibility (helping visually-impaired runners).
+
+\subsection{How Computers See Images}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Gray-scale images}: a 2D matrix of pixel values (single channel, e.g., $[0, 255]$).
+    \item \textbf{RGB images}: 3 channels stacked into a \textbf{tensor}.
+\end{itemize}
+
+\subsubsection{Benchmark Datasets}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{MNIST}: 60,000 training + 10,000 test handwritten digits, $28\times28$ pixels.
+    \item \textbf{CIFAR-10}: 50,000 training + 10,000 test images, $32\times32$, 10 classes, 6000 images per class.
+\end{itemize}
+
+\subsection{Why Not Use a Fully Connected NN?}
+
+\begin{warningbox}
+Naive approach: flatten the image into a vector and feed it to a fully-connected MLP. \textbf{Problems}:
+\begin{itemize}[leftmargin=*]
+    \item Number of weights ($H \times W$) explodes!
+    \item Geometric/spatial information is destroyed.
+\end{itemize}
+\end{warningbox}
+
+\subsection{Spatial Structure via Convolution}
+
+\begin{keybox}[title=Winning Strategy]
+Connect \emph{patches} of input to neurons in the hidden layer:
+\begin{itemize}[leftmargin=*]
+    \item One node responds only to nodes in a patch of the previous layer.
+    \item A single patch maps to a single neuron in the next layer.
+    \item Slide the window to define connections.
+\end{itemize}
+\end{keybox}
+
+\subsubsection{Convolution: Feature Extraction}
+
+\begin{definitionbox}[title=Convolution]
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Filter (kernel)} of size $H_k \times W_k$: a small matrix of weights.
+    \item The \textbf{same filter} is applied to all patches in the input (parameter sharing).
+    \item \textbf{Stride}: how many pixels the kernel slides for the next patch (often 1).
+    \item Each filter spatially shares the same parameters.
+\end{itemize}
+\end{definitionbox}
+
+For an input $(H_{\text{in}}, W_{\text{in}})$ and kernel $(H_k, W_k)$:
+\[
+\text{Output size} = (H_{\text{in}} - H_k + 1, W_{\text{in}} - W_k + 1)
+\]
+
+\subsubsection{Local Connectivity}
+
+For each neuron at position $(p, q)$ in the hidden layer:
+\[
+\sum_{i=1}^{4}\sum_{j=1}^{4} w_{ij}\, x_{i+p, j+q} + b
+\]
+For a $4 \times 4$ filter.
+
+\subsection{Padding}
+
+\textbf{Problem}: information at the edges may be lost.
+
+\textbf{Solution}: add a border of zeros (padding) of size $(H_p, W_p)$. The output becomes:
+\[
+(H_{\text{in}} - H_k + H_p + 1, W_{\text{in}} - W_k + W_p + 1)
+\]
+
+\subsection{Multiple Channels}
+
+For RGB images:
+\begin{itemize}[leftmargin=*]
+    \item Use an \emph{individual filter} (of the same size) for each channel.
+    \item Sum the resulting pixel values from all channels.
+\end{itemize}
+
+\subsection{Multiple Filters}
+
+Multiple filters extract multiple features. Output volume dimensions:
+\[
+h \times w \times d
+\]
+where $h, w$ are spatial dimensions and $d$ = number of filters (\textbf{depth}). The receptive field is the location in the input image that a node is path-connected to.
+
+\subsection{Hand-Crafted Filters and Feature Maps}
+
+\textbf{Examples of kernels}:
+\begin{itemize}[leftmargin=*]
+    \item Identity: $\begin{psmallmatrix}0&0&0\\0&1&0\\0&0&0\end{psmallmatrix}$
+    \item Edge detection: $\begin{psmallmatrix}-1&-1&-1\\-1&8&-1\\-1&-1&-1\end{psmallmatrix}$
+    \item Sharpen: $\begin{psmallmatrix}0&-1&0\\-1&5&-1\\0&-1&0\end{psmallmatrix}$
+    \item Box blur: $\tfrac{1}{9}\begin{psmallmatrix}1&1&1\\1&1&1\\1&1&1\end{psmallmatrix}$
+\end{itemize}
+
+\textbf{In CNNs we LEARN the filters} rather than hand-design them.
+
+\subsection{Non-Linearity (ReLU)}
+
+After convolution, apply a Rectified Linear Unit:
+\[
+g(z) = \max(0, z)
+\]
+This:
+\begin{itemize}[leftmargin=*]
+    \item Allows the network to model non-linear data.
+    \item Operates pixel-by-pixel: negatives become 0 (no detection), positives are preserved.
+\end{itemize}
+
+\subsection{Pooling}
+
+\begin{definitionbox}[title=Pooling]
+Pooling \textbf{downsamples} the feature map to:
+\begin{itemize}[leftmargin=*]
+    \item Reduce computational cost.
+    \item Extract shape/smooth features.
+    \item Maintain spatial invariance.
+\end{itemize}
+Common variants: \textbf{Max-pooling} (take max), \textbf{Average-pooling} (take mean), Min-pooling.
+\end{definitionbox}
+
+\subsection{CNN Structure Overview}
+
+\begin{tcolorbox}[colback=boxgray, colframe=leidenblue, title=\textbf{CNN for Classification}]
+\textbf{Feature Learning} (Convolutional Part):
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Convolution}: apply filters to generate feature maps.
+    \item \textbf{Non-linearity}: typically ReLU.
+    \item \textbf{Pooling}: downsample feature maps.
+\end{enumerate}
+Repeat several times.
+
+\smallskip
+\textbf{Classification} (Fully-Connected Part):
+\begin{itemize}[leftmargin=*]
+    \item Flatten the final feature maps.
+    \item Pass through fully-connected layers.
+    \item Apply \textbf{softmax} to express output as probability of class membership.
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{Softmax}: $\sigma(z)_i = \frac{e^{z_i}}{\sum_{j=1}^K e^{z_j}}$
+
+\subsection{Comparison to Human Vision}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{V1, V2, V4}: visual neuron areas. Receptive fields increase from V1 to V4. Process simple visual objects (curves, edges).
+    \item \textbf{IT (inferior temporal cortex)}: processes complex visual objects (e.g., faces).
+    \item Analogously, deep CNNs learn hierarchical representations: early layers detect edges, mid layers detect shapes, late layers detect objects.
+\end{itemize}
+
+\subsection{Visualization: Grad-CAM}
+
+\textbf{Gradient-weighted Class Activation Mapping}:
+\begin{itemize}[leftmargin=*]
+    \item Weighted overlay of all feature maps in a CNN.
+    \item Each layer is weighted by the magnitude of its gradient.
+    \item Highlights which regions of the image were most influential for a particular classification.
+\end{itemize}
+
+\subsection{Classical CNN Architectures}
+
+\subsubsection{LeNet-5 (LeCun et al., 1989)}
+
+The first successful deep learning architecture, originally applied to handwritten zip code recognition.
+
+\subsubsection{AlexNet (Krizhevsky et al., 2012)}
+
+Famous for winning the \textbf{ImageNet Large Scale Visual Recognition Challenge}. Marked the breakthrough of deep learning in computer vision.
+
+\subsubsection{VGG (Simonyan \& Zisserman, 2014)}
+
+Developed by the Visual Geometry Group at Oxford. Uses many $3\times3$ convolutions and stacks them deeply.
+
+\subsubsection{Vanishing Gradient and ResNet}
+
+\begin{warningbox}[title=Vanishing Gradient Problem]
+More layers $\to$ more expressive power, BUT gradients at the early layers become tiny, making training very difficult.
+\end{warningbox}
+
+\textbf{Solution: Residual Blocks (ResNet, He et al., 2016)}
+\begin{itemize}[leftmargin=*]
+    \item Introduce a \textbf{skip/residual connection}: $F(\vx) + \vx$.
+    \item Gradient flow can backpropagate via the skip connections without being downscaled.
+    \item Enables training of very deep networks (50, 100, even 1000+ layers).
+\end{itemize}
+
+\textbf{ResNet is the most-used backbone} in many modern models:
+\begin{itemize}[leftmargin=*]
+    \item RCNN (Regions with CNN features) for object detection.
+    \item Image captioning.
+    \item Visual Transformers.
+    \item Visual autoencoders.
+\end{itemize}
+
+\newpage
+% ===========================================================
+\section{Recurrent Neural Networks (RNNs)}
+% ===========================================================
+
+\subsection{Motivation: Time Series Forecasting}
+
+Sequential data exhibits \textbf{temporal dependency}. Each data point depends on previous ones.
+
+\textbf{Can we use a multi-layer NN?} Issues:
+\begin{itemize}[leftmargin=*]
+    \item How long is the past to use? (Fixed window is restrictive.)
+    \item Temporal dependencies among inputs are ignored.
+    \item The input-output relationship may vary through time.
+\end{itemize}
+
+\subsection{Introducing Cycles}
+
+\begin{definitionbox}[title=Recurrent Neuron]
+A neuron with a cycle:
+\[
+O(t) = g(\vec{w}_1^\top \vec{x}(t) + w_2\, O(t-1) + b)
+\]
+The output \emph{evolves through time}; given a fixed input, it generates a time series as output.
+\end{definitionbox}
+
+\textbf{Applications}:
+\begin{itemize}[leftmargin=*]
+    \item Memory $\to$ Hopfield Network.
+    \item Time-series forecasting and anomaly detection.
+    \item Language tasks: machine translation, sentiment analysis.
+    \item Generative tasks: Boltzmann machine.
+\end{itemize}
+
+\subsection{Computation Graph for RNNs}
+
+\textbf{Unfolding} a simple RNN in time gives a feedforward structure with shared weights across time steps.
+
+\subsection{Vanilla RNN}
+
+\begin{definitionbox}[title=Vanilla RNN with Hidden State]
+\begin{align*}
+h(t) &= \sigma\!\left(W\begin{bmatrix} x(t) \\ h(t-1) \end{bmatrix}\right) \\
+O(t) &= g(h(t))
+\end{align*}
+The \textbf{hidden state} is the internal state of the RNN cell: it represents a short memory of the history.
+\end{definitionbox}
+
+The hidden state is \emph{different from the output}: it carries information forward in time even when the output is ignored.
+
+\subsection{Use Case: Sentiment Classification}
+
+\textbf{Input}: words/sentences (e.g., movie reviews). \textbf{Output}: positive or negative sentiment.
+
+Various readout strategies:
+\begin{itemize}[leftmargin=*]
+    \item Use only the \textbf{last hidden state} $h_n$ to feed a linear classifier.
+    \item \textbf{Ignore} intermediate hidden states.
+    \item Use a \textbf{sum} of all hidden states: $h = \text{Sum}(h_1, \ldots, h_n)$.
+\end{itemize}
+
+\subsection{Training RNNs: Backpropagation Through Time (BPTT)}
+
+\begin{tcolorbox}[colback=boxgray, colframe=leidenblue, title=\textbf{BPTT}]
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Unfold (copy)} the RNN in time during the forward pass.
+    \item Treat the unfolded RNN as a \textbf{multi-layer NN}.
+    \item Weight updates are computed \textbf{for each copy} in the unfolded network, then averaged.
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{Issue: Vanishing or Exploding Gradients}
+
+\begin{warningbox}
+\begin{itemize}[leftmargin=*]
+    \item If the \textbf{largest singular value of $W$ is small}, the vanishing gradients problem occurs.
+    \item If the \textbf{largest singular value of $W$ is large enough}, the gradient explodes.
+\end{itemize}
+\end{warningbox}
+
+This makes vanilla RNNs unable to learn long-term dependencies.
+
+\subsection{Long Short-Term Memory (LSTM) Networks}
+
+\begin{keybox}
+\textbf{LSTMs} (Hochreiter \& Schmidhuber, 1997) are gated RNNs introducing a \textbf{cell state} -- the long-term memory.
+\end{keybox}
+
+\subsubsection{Cell State and the Constant Error Carousel (CEC)}
+
+The cell state ensures that gradients don't decay:
+\[
+\vC(t) = f(t) * \vC(t-1) + \text{Input}(t)
+\]
+
+If we ignore the input:
+\[
+\vC(t) = f(t) * f(t-1) * \cdots * f(t-n+1) * \vC(t-n)
+\]
+And the gradient:
+\[
+\nabla \vC(t) = f(t) * f(t-1) * \cdots * f(t-n+1) * \nabla \vC(t-n)
+\]
+
+\subsubsection{LSTM Gates}
+
+\textbf{Forget Gate}: decides forgetting coefficient using current input + short history:
+\[
+f(t) = \sigma\!\left(W_f\, [\vh(t-1), \vec{x}(t)] + b_f\right)
+\]
+Sigmoid is used to keep $f(t) \in (0, 1)$.
+
+\textbf{Input Gate} (self-gated): scales the current input:
+\begin{align*}
+\text{Input}(t) &= i(t) * \tilde{C}(t) \\
+i(t) &= \sigma\!\left(W_i\,[\vh(t-1), \vx(t)] + b_i\right) \\
+\tilde{C}(t) &= \tanh\!\left(W_C\,[\vh(t-1), \vx(t)] + b_C\right)
+\end{align*}
+$\tanh$ is used to keep $\tilde{C}(t)$ bounded.
+
+\textbf{Cell State Update}:
+\[
+\vC(t) = f(t) * \vC(t-1) + i(t) * \tilde{C}(t)
+\]
+
+\textbf{Output Gate} (self-gated): scales the current cell state:
+\begin{align*}
+o(t) &= \sigma\!\left(W_o\,[\vh(t-1), \vx(t)] + b_o\right) \\
+\vh(t) &= o(t) * \tanh(\vC(t))
+\end{align*}
+
+\subsubsection{Why Not ReLU in LSTM?}
+
+\begin{warningbox}
+Replacing $\tanh$ by ReLU in the input gate is \emph{not safe}: $i(t) \in (0,1)$ but $\tilde{C}(t)$ computed via ReLU can \textbf{explode}. The same applies to the output gate.
+\end{warningbox}
+
+\subsubsection{Caveat: Very Long Sequences}
+
+The forget scaler $f(t) \in (0, 1)$. If $f(t) = 0.99$ and $n = 1000$, then $0.99^{1000} \approx 4.317 \times 10^{-5}$ -- still vanishing!
+
+\textbf{Solution for very long sequences}: \textbf{Attention Mechanism}.
+
+\subsection{Beyond LSTM: Seq2Seq Models}
+
+Sequence-to-sequence is arguably the most classical model for NLP. Used for machine translation, multi-step time-series forecasting.
+
+\subsubsection{Encoder}
+
+\begin{align*}
+\vec{x}(t) &= \text{Embedding}(\vec{w}(t)) \\
+\vec{h}_E(t) &= \text{RNN}_E(\vec{x}(t), \vec{h}_E(t-1)) \\
+\vec{s} &= \vec{h}_E(\text{last})
+\end{align*}
+
+\begin{itemize}[leftmargin=*]
+    \item Word embedding: typically, a fully-connected NN.
+    \item The initial hidden state $\vec{h}(0)$ is usually randomized.
+\end{itemize}
+
+\subsubsection{Decoder}
+
+\begin{align*}
+\vec{h}(0) &= \vec{h}_E(\text{last}) \\
+\vec{h}_D(t) &= \text{RNN}_D(O(t-1), \vec{h}_D(t-1)) \\
+O(t) &= \text{Softmax}(\vec{h}_D(t))
+\end{align*}
+
+\begin{itemize}[leftmargin=*]
+    \item Take $\vec{s} = \vec{h}_E(\text{last})$ to initialize the decoder's hidden state.
+    \item Input is the decoded/predicted symbol from the previous step.
+\end{itemize}
+
+\newpage
+% ===========================================================
+\section{Generative Models}
+% ===========================================================
+
+\subsection{Introduction}
+
+Formally, generative modeling is \textbf{unsupervised learning}. The goal: create \emph{new forms of data} learned from existing ones, with \textbf{novelty}.
+
+\textbf{Applications}:
+\begin{itemize}[leftmargin=*]
+    \item Image synthesis.
+    \item Image captioning.
+    \item Video generation.
+    \item Language generation (e.g., GPT models).
+    \item Generating reports, slides, etc.
+\end{itemize}
+
+\subsection{Autoencoders}
+
+\begin{definitionbox}[title=Autoencoder]
+Two (sub-)networks:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Encoder} $g_\phi$: obtains the \textbf{latent low-dimensional representation} of the data.
+    \item \textbf{Decoder} $f_\theta$: \textbf{reconstructs} the data from the latent code.
+\end{itemize}
+Ideally $\vx \approx \vx'$ (input $\approx$ reconstruction).
+\end{definitionbox}
+
+\textbf{Choice of encoder}:
+\begin{itemize}[leftmargin=*]
+    \item For images: a CNN.
+    \item For time-series: a multi-layer LSTM.
+    \item For tabular data: a multi-layer perceptron.
+\end{itemize}
+$\phi$ represents all trainable parameters (weights and biases).
+
+\textbf{Decoder for image data} requires upsampling. Two options:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Upsampling (interpolation)}.
+    \item \textbf{Transposed convolution}: spreads each input pixel value over a larger area; can be visualized as inserting zeros between elements and then applying a standard convolution.
+\end{itemize}
+
+\subsubsection{Loss Function -- Reconstruction Error}
+
+\[
+\mathcal{L}_{\text{AE}}(\phi, \theta) = \frac{1}{n}\sum_{i=1}^n \left[\vx^{(i)} - f_\theta\!\left(g_\phi(\vx^{(i)})\right)\right]^2
+\]
+
+Mathematically, we try to learn an identity function: $\text{id} \approx f_\theta \circ g_\phi$.
+
+\subsubsection{Generating New Data}
+
+\begin{enumerate}[leftmargin=*]
+    \item After training, sample a random point in the latent space.
+    \item Decode this random latent point.
+    \item A new image!
+\end{enumerate}
+
+\subsection{Variational Autoencoders (VAEs)}
+
+\begin{warningbox}
+Standard autoencoders learn a compressed latent representation $z$. However, the latent space may be \textbf{irregular or discontinuous}, and small changes in $z$ may produce unrealistic outputs.
+\end{warningbox}
+
+\begin{keybox}[title=VAE Key Idea]
+Instead of mapping an input to a single latent point, a VAE learns a \textbf{probability distribution}: $q_\phi(z|\vx)$ parameterized by mean $\mu$ and standard deviation $\sigma$:
+\[
+z = \mu + \sigma \odot \epsilon, \qquad \epsilon \sim \mathcal{N}(0, I)
+\]
+\end{keybox}
+
+\textbf{Benefits}:
+\begin{itemize}[leftmargin=*]
+    \item Smooth latent space.
+    \item Meaningful interpolation between samples.
+    \item Better generation of new, unseen data.
+\end{itemize}
+
+\textbf{Loss function}:
+\[
+\mathcal{L}_{\text{VAE}} = \underbrace{\mathcal{L}_{\text{reconstruction}}}_{\text{reconstruct input well}} + \underbrace{D_{KL}(q(z|\vx)\,\|\,p(z))}_{\text{keep latent space regular}}
+\]
+The KL divergence measures how different the encoder's distribution is from a standard normal distribution.
+
+\subsection{Generative Adversarial Networks (GANs)}
+
+Two (sub-)networks compete:
+\begin{itemize}[leftmargin=*]
+    \item A \textbf{discriminator $D$} (an image classifier): determines if an image is real or synthetic.
+    \item A \textbf{generator $G$}: creates synthetic images from noise, trying to make them realistic enough to fool $D$.
+\end{itemize}
+
+\textbf{The process}:
+\begin{enumerate}[leftmargin=*]
+    \item $G$ generates synthetic samples starting from random latent noise vectors.
+    \item $D$ receives a mix of real and synthetic images, attempts to distinguish them.
+    \item Based on $D$'s success/failure, both networks adjust:
+    \begin{itemize}
+        \item If $D$ is correct, $G$ improves to create better fakes.
+        \item If $D$ is wrong, $D$ learns to avoid similar mistakes.
+    \end{itemize}
+    \item $D$ is rewarded for correct predictions, $G$ is rewarded for $D$'s errors.
+\end{enumerate}
+
+The process continues until both networks reach an \textbf{optimal balance (Nash equilibrium)}.
+
+\subsection{Modern Approaches: Diffusion \& Transformers}
+
+\subsubsection{Diffusion Models}
+
+\begin{itemize}[leftmargin=*]
+    \item Modern image generation is dominated by \textbf{diffusion models} much more than GANs.
+    \item GANs are historically important, but diffusion models are today's state of the art.
+    \item The model learns how to \textbf{iteratively denoise} random noise into meaningful data.
+    \item \textbf{Forward diffusion}: gradually add noise to data.
+    \item \textbf{Reverse diffusion}: learn to remove noise step by step.
+\end{itemize}
+
+\subsubsection{Transformers}
+
+\begin{itemize}[leftmargin=*]
+    \item Foundation of modern generative AI: GPT, Gemini, Claude, Llama, etc.
+    \item Instead of processing data sequentially (like RNNs), transformers use an \textbf{attention mechanism} to determine which parts of the input are most relevant.
+\end{itemize}
+
+\newpage
+% ===========================================================
+\section{Universal Approximation Theorem (UAT)}
+% ===========================================================
+
+\subsection{Theorem Statement}
+
+\begin{theorembox}[title=Universal Approximation Theorem]
+Any continuous function $f: [0,1]^n \to [0,1]$ can be approximated with \textbf{arbitrary precision} by a neural network with at least \textbf{one hidden layer} with a finite number of weights.
+\end{theorembox}
+
+\textbf{Formal version}: suppose we have a function $f(x)$ to compute within some desired accuracy $\epsilon > 0$. It is guaranteed that, by using enough hidden neurons, we can always find a neural network whose output $g(x)$ satisfies:
+\[
+|g(x) - f(x)| < \epsilon \quad \text{for all } x.
+\]
+
+To this end, the number of hidden nodes, learning iterations, weights, and biases needs to be \emph{adapted individually} for the to-be-approximated function.
+
+\subsection{Visual Proof Sketch}
+
+Consider a function with 1 input and 1 output and a NN with: 2 hidden neurons, 1 output neuron, sigmoid activation $\sigma(wx + b)$.
+
+\subsubsection{Step 1: Generating a Step Function}
+
+By using one neuron with a very large $w$ (e.g., $w = 999$), we generate a \textbf{step function}. The position of the step is:
+\[
+s = -\frac{b}{w}
+\]
+proportional to $b$, inversely proportional to $w$. From now on, we use just one parameter $s$ for each hidden neuron.
+
+\subsubsection{Step 2: Weighted Output from Hidden Layer}
+
+For the whole network with hidden neurons making steps at $s_1$ and $s_2$, with weights $w_1$ and $w_2$ to the output:
+\[
+\text{Output} = w_1\, a_1 + w_2\, a_2
+\]
+This is a piecewise-constant function with values stepping up at $s_1$ and $s_2$.
+
+\subsubsection{Step 3: Creating a ``Bin'' Function}
+
+By setting $w_2 = -w_1$ (i.e., $h = w_1 = -w_2$), we obtain a single rectangular ``bin'' starting at $s_1$ and ending at $s_2$:
+\begin{itemize}[leftmargin=*]
+    \item Position controlled by $s_1, s_2$.
+    \item Height controlled by $h$.
+\end{itemize}
+
+\subsubsection{Step 4: Multiple Bins $\to$ Function Approximation}
+
+By adding pairs of hidden neurons, we create multiple bins:
+\begin{itemize}[leftmargin=*]
+    \item Divide the interval $[0,1]$ into $N$ sub-intervals.
+    \item Use $N$ pairs of hidden neurons to set up peaks at desired heights.
+    \item This generates a \textbf{histogram that discretizes the function}.
+\end{itemize}
+
+Playing with heights and number of bins, we can approximate any continuous function up to a desired precision. The average deviation between the goal function and the NN approximation can be made arbitrarily small.
+
+\begin{keybox}[title=Practical Implication]
+While the UAT guarantees that a \emph{single hidden layer} can approximate any continuous function, in practice we use \textbf{deep architectures} because:
+\begin{itemize}[leftmargin=*]
+    \item Shallow networks may need exponentially many neurons.
+    \item Deep networks learn \textbf{hierarchical features} more efficiently.
+    \item Deep networks have better generalization properties.
+\end{itemize}
+\end{keybox}
+
+\newpage
+% ===========================================================
+\section{Quick Reference and Exam Tips}
+% ===========================================================
+
+\subsection{Key Formulas Cheatsheet}
+
+\subsubsection{Perceptron}
+\[
+O = \sgn(\vec{w}^\top \vec{x} + b), \qquad
+\Delta w_j = \eta(y_p - O_p)\, x_j^p
+\]
+
+\subsubsection{Backpropagation}
+\[
+\delta_i^{(k)} = g'(h_i^{(k)})\,\frac{\partial L}{\partial O_i^{(k)}}, \qquad
+\frac{\partial L}{\partial w_{ij}^{(k)}} = O_j^{(k-1)}\,\delta_i^{(k)}
+\]
+\[
+\delta_j^{(k-1)} = g'(h_j^{(k-1)})\sum_{i=1}^{n_k} w_{ij}^{(k)}\delta_i^{(k)}
+\]
+
+\subsubsection{Hopfield Network}
+\[
+w_{ij} = \frac{1}{N}\sum_{\mu=1}^{P} \xi_i^{\mu}\xi_j^{\mu}, \qquad
+E(\vec{x}) = -\tfrac{1}{2}\vec{x}^\top \mathbf{W}\vec{x} - \vec{x}^\top\vec{b}
+\]
+
+\subsubsection{CNN Output Size}
+\[
+H_{\text{out}} = H_{\text{in}} - H_k + H_p + 1
+\]
+
+\subsubsection{Vanilla RNN}
+\[
+h(t) = \sigma\!\left(W\begin{bmatrix} x(t) \\ h(t-1) \end{bmatrix}\right), \qquad O(t) = g(h(t))
+\]
+
+\subsubsection{LSTM Gates Summary}
+\begin{align*}
+f(t) &= \sigma(W_f\,[\vh(t-1), \vec{x}(t)] + b_f) && \text{(forget)} \\
+i(t) &= \sigma(W_i\,[\vh(t-1), \vec{x}(t)] + b_i) && \text{(input scaler)} \\
+\tilde{C}(t) &= \tanh(W_C\,[\vh(t-1), \vec{x}(t)] + b_C) && \text{(candidate)} \\
+\vec{C}(t) &= f(t) * \vec{C}(t-1) + i(t) * \tilde{C}(t) && \text{(cell state)} \\
+o(t) &= \sigma(W_o\,[\vh(t-1), \vec{x}(t)] + b_o) && \text{(output)} \\
+\vh(t) &= o(t) * \tanh(\vec{C}(t)) && \text{(hidden state)}
+\end{align*}
+
+\subsubsection{VAE Loss}
+\[
+\mathcal{L}_{\text{VAE}} = \mathcal{L}_{\text{reconstruction}} + D_{KL}(q(z|\vec{x})\,\|\,p(z))
+\]
+
+\subsection{Common Exam Questions}
+
+\textbf{Conceptual:}
+\begin{itemize}[leftmargin=*]
+    \item Why is XOR not linearly separable? How does an MLP solve it?
+    \item What is the difference between a Hopfield Network and a feed-forward NN?
+    \item What is the relation between Hebbian learning and gradient descent?
+    \item What problem does ResNet solve, and how?
+    \item How does an LSTM combat the vanishing gradient problem?
+    \item How does a VAE differ from a standard autoencoder?
+\end{itemize}
+
+\textbf{Computational:}
+\begin{itemize}[leftmargin=*]
+    \item Compute the output of a perceptron given weights and inputs.
+    \item Compute the output size of a convolutional layer given input, kernel, padding, and stride.
+    \item Trace the BPTT for a simple RNN over 2-3 time steps.
+    \item Determine whether a given set of patterns is linearly separable.
+    \item Calculate the Hopfield weight matrix for a small number of patterns.
+\end{itemize}
+
+\textbf{Architecture:}
+\begin{itemize}[leftmargin=*]
+    \item Sketch the structure of an MLP, CNN, RNN, LSTM, autoencoder, VAE, GAN.
+    \item Identify the components of a CNN (conv, pool, FC, softmax).
+    \item Identify the LSTM gates and their purposes.
+\end{itemize}
+
+\subsection{Important Concepts Summary}
+
+\begin{center}
+\begin{tabular}{p{4cm} p{10cm}}
+\toprule
+\textbf{Concept} & \textbf{Key takeaway} \\
+\midrule
+McCulloch-Pitts neuron & First computational model of a neuron (1943). \\
+Perceptron & Linear binary classifier; cannot solve XOR. \\
+Hebbian learning & ``Neurons that fire together, wire together.'' \\
+Hopfield Network & Recurrent network for associative memory; capacity $\approx 0.15N$. \\
+Backpropagation & Chain rule applied through computation graph to compute gradients. \\
+Gradient Descent & Iterative minimization of loss via $w \leftarrow w - \eta\nabla L$. \\
+Mini-batch SGD & Trade-off between full-batch and stochastic gradient descent. \\
+Overfitting & High training accuracy, low validation accuracy; use early stopping. \\
+CNN & Local connectivity + parameter sharing for spatial data. \\
+Pooling & Downsampling for invariance and efficiency. \\
+ResNet & Skip connections to enable very deep networks. \\
+RNN & Cycles in network $\to$ memory of past inputs via hidden state. \\
+BPTT & Unfolding the RNN in time and applying BP. \\
+LSTM & Gated RNN with cell state to combat vanishing gradients. \\
+Seq2Seq & Encoder-decoder for variable-length sequences (translation). \\
+Attention & Replace recurrence; foundation of Transformers. \\
+Autoencoder & Encoder $\to$ bottleneck $\to$ decoder; learns identity. \\
+VAE & Probabilistic latent space; KL regularization. \\
+GAN & Generator vs Discriminator adversarial game. \\
+Diffusion Model & Learns to iteratively denoise into data; state of the art. \\
+UAT & One hidden layer can approximate any continuous function. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vfill
+\begin{center}
+\rule{0.5\textwidth}{0.4pt}\\
+\textit{End of Study Guide -- Good luck with your exam!}\\
+\rule{0.5\textwidth}{0.4pt}
+\end{center}
+
+\end{document}

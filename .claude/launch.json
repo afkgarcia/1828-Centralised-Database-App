@@ -1,0 +1,57 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Prototypes static server",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8000",
+        "--directory",
+        "Prototypes",
+        "--bind",
+        "127.0.0.1"
+      ],
+      "port": 8000
+    },
+    {
+      "name": "aincc-server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "/Users/alessandrogarcia/Projects/GarciaGaspar/AINCC/server/server.js"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "shareplan-app",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8100",
+        "--directory",
+        "/Users/alessandrogarcia/Projects/GarciaGaspar/AINCC/app",
+        "--bind",
+        "127.0.0.1"
+      ],
+      "port": 8100
+    },
+    {
+      "name": "shareplan-app-attach",
+      "url": "http://localhost:8100",
+      "port": 8100
+    },
+    {
+      "name": "1828-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "web:server:demo",
+        "--prefix",
+        "electron-app"
+      ],
+      "port": 8028
+    }
+  ]
+}

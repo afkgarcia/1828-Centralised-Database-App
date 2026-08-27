@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+
+# Node / Electron app
+electron-app/node_modules/
+electron-app/out/
+electron-app/dist.nosync/
+electron-app/dist/
+electron-app/web/dist-renderer/
+*.log
+
+# Kotlin reference app build output
+desktop-app/.gradle/
+desktop-app/build/
+
+# Local databases / secrets never belong in the repo
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+smtp.json
+google-oauth.json
+google-drive-token.json

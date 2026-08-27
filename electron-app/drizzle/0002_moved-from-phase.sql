@@ -1,0 +1,1 @@
+ALTER TABLE `tasks` ADD `moved_from_phase_id` text;

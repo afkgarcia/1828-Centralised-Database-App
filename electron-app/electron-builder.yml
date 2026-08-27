@@ -1,0 +1,24 @@
+# Packaging config (run: npm run dist). Validated 2026-07-28: better-sqlite3
+# loads in the packaged app, seed gate stays off (SEED_DEMO=1 to override),
+# outbox lands under the packaged userData. afterPack applies an ad-hoc
+# signature when no Developer ID is available — without it the bundle's seal
+# is invalid and Apple-silicon macOS SIGKILLs the app at launch.
+appId: nl.eighteen28.fasedocument-tracker
+afterPack: scripts/after-pack-sign.cjs
+productName: 1828 Fasedocument Tracker
+directories:
+  # ".nosync" keeps iCloud Drive from syncing the output tree — on an
+  # iCloud-synced checkout the sync daemon re-stamps Finder xattrs onto the
+  # packed bundle between signing and DMG creation, breaking the signature.
+  output: dist.nosync
+files:
+  - out/**
+  - drizzle/**
+  - package.json
+mac:
+  target: dmg
+  category: public.app-category.productivity
+win:
+  target: nsis
+linux:
+  target: AppImage

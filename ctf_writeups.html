@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Security 2026 — CTF Write-ups</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1c2333; --muted:#5b6479;
+    --accent:#2b59ff; --line:#e3e7f0; --code-bg:#f0f2f8; --flag:#0a7d2c;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px 20px; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6;
+  }
+  .wrap{max-width:880px;margin:0 auto}
+  header.page{
+    text-align:center;margin-bottom:36px;padding-bottom:24px;border-bottom:2px solid var(--line);
+  }
+  header.page h1{margin:0 0 6px;font-size:1.9rem;letter-spacing:-.01em}
+  header.page p{margin:0;color:var(--muted)}
+  table.summary{
+    width:100%;border-collapse:collapse;margin:0 0 40px;background:var(--card);
+    border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    box-shadow:0 4px 14px rgba(20,30,60,.05);
+  }
+  table.summary th,table.summary td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line)}
+  table.summary th{background:#eef1f9;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  table.summary tr:last-child td{border-bottom:none}
+  table.summary td.num{width:42px;color:var(--muted);font-variant-numeric:tabular-nums}
+  table.summary td.flag{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--flag);font-weight:600;white-space:nowrap}
+  section.chal{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:24px 28px;margin-bottom:22px;box-shadow:0 4px 14px rgba(20,30,60,.05);
+  }
+  section.chal h2{
+    margin:0 0 14px;font-size:1.25rem;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+  }
+  section.chal h2 .badge{
+    font-size:.72rem;font-weight:700;color:#fff;background:var(--accent);
+    padding:3px 9px;border-radius:999px;letter-spacing:.03em;
+  }
+  .flagline{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:#eafaef;color:var(--flag);border:1px solid #bfe8cb;
+    padding:8px 12px;border-radius:8px;font-weight:600;margin:0 0 18px;display:inline-block;
+  }
+  h3.lbl{
+    font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+    margin:18px 0 4px;border-left:3px solid var(--accent);padding-left:8px;
+  }
+  p.body{margin:0 0 6px}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--code-bg);padding:1px 5px;border-radius:5px;font-size:.9em;
+  }
+  footer{text-align:center;color:var(--muted);font-size:.82rem;margin-top:30px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="page">
+  <h1>Web Security 2026 — CTF Write-ups</h1>
+  <p>Target: <code>websec2026.liacs.nl</code> · Leiden University</p>
+</header>
+
+<table class="summary">
+  <thead><tr><th class="num">#</th><th>Challenge</th><th>Flag</th></tr></thead>
+  <tbody>
+    <tr><td class="num">1</td><td>Requesting access</td><td class="flag">FLAG{R3QU3ST_CR4FT1NG}</td></tr>
+    <tr><td class="num">2</td><td>Handy online service</td><td class="flag">FLAG{$H3LL_1NJECT10N}</td></tr>
+    <tr><td class="num">3</td><td>Direct banking</td><td class="flag">FLAG{IDOR}</td></tr>
+    <tr><td class="num">4</td><td>Verified hacker</td><td class="flag">FLAG{YOU_CANT_SEE_ME}</td></tr>
+    <tr><td class="num">5</td><td>Guess!</td><td class="flag">FLAG{ROCK_PAPER_COOKIES!?}</td></tr>
+    <tr><td class="num">6</td><td>Guns N' Roses</td><td class="flag">FLAG{Sl4sh}</td></tr>
+    <tr><td class="num">7</td><td>Worth a thousand words</td><td class="flag">FLAG{F0R3NS1CR3S3ARCH3R}</td></tr>
+    <tr><td class="num">8</td><td>Call me maybe</td><td class="flag">FLAG{Numbers!}</td></tr>
+    <tr><td class="num">9</td><td>Teenage Mutant Jinja Turtles</td><td class="flag">FLAG{S4F3_T3MPL4T3}</td></tr>
+    <tr><td class="num">10</td><td>Shrouded in darkness</td><td class="flag">Flag{0bscur3}</td></tr>
+  </tbody>
+</table>
+
+<section class="chal">
+  <h2><span class="badge">01</span> Requesting access</h2>
+  <p class="flagline">FLAG{R3QU3ST_CR4FT1NG}</p>
+  <h3 class="lbl">Vulnerabilities</h3>
+  <p class="body">The vulnerabilities related to this level are broken access control, where privilege levels are determined by a client-provided <code>admin</code> field rather than a secure server-side session; a lack of integrity protection, where the request body is merely Base64-encoded JSON, so without any encryption or cryptographic signature an attacker can decode and modify the payload without detection; and a weak anti-replay mechanism, where the server checks a <code>time</code> field to reject stale requests, but because this timestamp is also client-provided and unauthenticated, it cannot prevent a freshly crafted request.</p>
+  <h3 class="lbl">Exploitation</h3>
+  <p class="body">I first did some reconnaissance: decoding the Base64 requests revealed the JSON structure, and comparing a failed request to a successful one showed exactly what was needed. Replaying the successful <code>admin:1</code> payload failed with a "too old" error, so to overcome this I generated a new payload with the current timestamp. Finally I wrote a small bash script to generate the current time, build the malicious JSON with <code>admin:1</code>, Base64-encode it, and send it via POST.</p>
+</section>
+
+<section class="chal">
+  <h2><span class="badge">02</span> Handy online service</h2>
+  <p class="flagline">FLAG{$H3LL_1NJECT10N}</p>
+  <h3 class="lbl">Vulnerabilities</h3>
+  <p class="body">The vulnerability related to this level is unauthenticated OS command injection, where the application takes user input and passes it directly to a system shell with no validation, sanitization, or sandboxing. In effect the entire feature is an open remote shell. This is made worse by a lack of authentication on the endpoint, so anyone who can reach it can run commands, and by excessive privileges, since the process runs as root, meaning a single injection gives full control of the host rather than a limited account.</p>
+  <h3 class="lbl">Exploitation</h3>
+  <p class="body">I first did some reconnaissance, fetching the page source which revealed that the form posts JSON of the form <code>{"command": ...}</code> to the <code>/shell</code> endpoint with a JSON content type, and returns the output in the <code>msg</code> field. This meant I could call the endpoint directly with <code>curl</code> instead of using the web UI. I confirmed code execution by sending <code>ls -la</code>, which returned a real directory listing and showed a <code>flag.txt</code> file sitting in the application's working directory. Finally I sent <code>cat flag.txt</code> the same way, and the server returned the contents of the file.</p>
+</section>
+
+<section class="chal">
+  <h2><span class="badge">03</span> Direct banking</h2>
+  <p class="flagline">FLAG{IDOR}</p>
+  <h3 class="lbl">Vulnerabilities</h3>
+  <p class="body">The vulnerability related to this level is an Insecure Direct Object Reference (IDOR), where each account is served at <code>/accounts/&lt;username&gt;.php</code> with no authorization check. The server never verifies that the requester is actually the user whose account is being requested, so anyone can read any account simply by changing the filename in the URL. This is compounded by information leakage, since each account's transaction history displays the names of other account holders, which gives an attacker exactly the usernames needed to keep enumerating.</p>
+  <h3 class="lbl">Exploitation</h3>
+  <p class="body">I first did some reconnaissance and noticed that the page was at <code>/accounts/johndoe.php</code>, which suggested accounts were keyed by the username in the filename, and that the naming convention was the first and last name in lowercase with no spaces. Listing the <code>/accounts/</code> directory was forbidden and there was no admin account, so instead I used the data on the page itself: John Doe's transaction history named "Jane Doe" and "Jim Smith", so I requested <code>janedoe.php</code> and <code>jimsmith.php</code>, which both returned valid accounts. Jim Smith's transaction history in turn named a new account holder, "Bob Johnson", so I requested <code>bobjohnson.php</code>. Its transaction history contained an entry whose "From Account" column held the flag.</p>
+</section>
+
+<section class="chal">
+  <h2><span class="badge">04</span> Verified hacker</h2>
+  <p class="flagline">FLAG{YOU_CANT_SEE_ME}</p>
+  <h3 class="lbl">Vulnerabilities</h3>
+  <p class="body">The vulnerability related to this level is broken access control through client-controlled state, where whether a user is considered a "verified hacker" is decided by a hidden form field called <code>state</code> that is sent by the client. The form ships with <code>state</code> set to <code>0</code> (not verified), but because this value lives in the request and is fully controlled by the client, it can be tampered with. The server trusts it directly instead of tracking verification status server-side, and the check is effectively just "is <code>state</code> equal to 0?", so any other value is treated as verified.</p>
+  <h3 class="lbl">Exploitation</h3>
+  <p class="body">I first did some reconnaissance and fetched the page source, which showed a form that posts to the <code>/verified</code> endpoint with two fields: the visible <code>hackername</code> text field and a hidden field <code>state</code> with value <code>0</code>. Submitting the form normally (with <code>state=0</code>) returned "Sadly, you do not seem to be a verified hacker." I then resubmitted the same request but changed the hidden field to <code>state=1</code>. One detail worth noting for reproduction: the successful response body looked empty in the terminal at first, so I used <code>curl -i</code> (include headers) to view the full response, which revealed the flag. I confirmed afterwards that any value other than <code>0</code> produces the same verified result.</p>
+</section>
+
+<section class="chal">
+  <h2><span class="badge">05</span> Guess!</h2>
+  <p class="flagline">FLAG{ROCK_PAPER_COOKIES!?}</p>
+  <h3 class="lbl">Vulnerabilities</h3>
+  <p class="body">The vulnerability is client-side reliance on unsecured state through an unsigned cookie. A plaintext cookie called <code>score</code> stores the game's score with no encryption or signature, so the client can set any value. On each win the server increments the value read from the cookie, and awards the flag once it reaches the threshold, trusting attacker-controlled data. The game logic itself was valid; the flaw was storing the score in an editable cookie.</p>
+  <h3 class="lbl">Exploitation</h3>
+  <p class="body">After reconnaissance, I pulled the page source and saw the form posts JSON <code>{"guess":"0|1|2"}</code> to the <code>/game</code> endpoint, and that the server tracks the score rather than sending it to the client. Inspecting the response headers with <code>curl -si</code> revealed <code>Set-Cookie: score=0</code>, confirming an editable cookie. I then sent requests with a forged <code>score=999999</code> cookie. Since the server's move is random and I win roughly a third of rounds, I looped the same forged request until a winning round occurred. On that win the server added 1 to 999999, passed the threshold, and awarded the flag.</p>
+</section>
+
+<section class="chal">
+  <h2><span class="badge">06</span> Guns N' Roses</h2>
+  <p class="flagline">FLAG{Sl4sh}</p>
+  <h3 class="lbl">Vulnerabilities</h3>
+  <p class="body">The vulnerability is path traversal via an off-by-slash in an nginx <code>alias</code> directive, caused by a misconfigured block of the form <code>location /flag { alias /.../flag/; }</code>. The prefix has no trailing slash but the alias does. This mismatch lets an attacker escape the directory: when a URL matches the prefix, nginx strips <code>/flag</code> and appends the remainder to the alias path, so <code>/flag../X</code> resolves to <code>/.../flag/../X</code>, climbing above the served directory to read other files.</p>
+  <h3 class="lbl">Exploitation</h3>
+  <p class="body">Visiting <code>/flag.txt</code> returned 404 even though <code>/</code> redirected to it. Any URL with extra path segments returned a 301 to <code>/flag.txt</code>, while URLs normalizing to <code>/flag.txt</code> returned 404, indicating a dedicated handler for the flag path and a catch-all for everything else. To find the handler's exact prefix I ran a case test: <code>/flag.TXT</code> returned 404, but <code>/Flag.txt</code> and <code>/FLAG.TXT</code> returned 301. The common factor of the 404s was the lowercase prefix <code>/flag</code>, revealing the real location prefix. Recognizing the off-by-slash, I requested <code>/flag../flag.txt</code> with <code>curl --path-as-is</code> so curl wouldn't collapse the <code>..</code>. nginx resolved this to the alias path plus <code>../flag.txt</code>, returning the flag.</p>
+</section>
+
+<section class="chal">
+  <h2><span class="badge">07</span> Worth a thousand words</h2>
+  <p class="flagline">FLAG{F0R3NS1CR3S3ARCH3R}</p>
+  <h3 class="lbl">Vulnerabilities</h3>
+  <p class="body">The flaw wasn't in the web application but in how the flag was hidden inside one of the images. A JPEG ends at its FFD9 end-of-image marker, and bytes after it are ignored by viewers and browsers, so the picture displays normally while carrying a hidden payload. Here a gzip-compressed file called <code>flag.txt</code> was appended after the marker. The weakness is trailing content after a file's logical end: invisible when viewed, easily extracted from the raw bytes, and able to bypass header-only checks.</p>
+  <h3 class="lbl">Exploitation</h3>
+  <p class="body">My reconnaissance found no web attack surface: the vote buttons had no backend, <code>/static/</code> used the framework's safe handler so it couldn't be traversed, and there were no hidden endpoints. I then examined the images. Running <code>strings</code> revealed the filename <code>flag.txt</code> but no plaintext FLAG, so the contents were compressed. <code>unzip</code> failed, since there was no ZIP central directory. Inspecting the raw bytes around <code>flag.txt</code>, I saw the JPEG FFD9 marker followed by the gzip magic bytes (<code>1f 8b 08 08</code>), the stored filename <code>flag.txt</code>, a deflate stream, and a footer giving a 25-byte uncompressed size. I recovered the flag by carving from the gzip magic to end of file and decompressing with <code>gzip</code>.</p>
+</section>
+
+<section class="chal">
+  <h2><span class="badge">08</span> Call me maybe</h2>
+  <p class="flagline">FLAG{Numbers!}</p>
+  <h3 class="lbl">Vulnerabilities</h3>
+  <p class="body">The vulnerability is information disclosure with reversible obfuscation, not a server flaw. The flag was hidden on the page disguised as phone numbers, and the decoding instructions were left in a Base64-encoded HTML comment in the source. The digit groups in each fake number are decimal ASCII character codes.</p>
+  <h3 class="lbl">Exploitation</h3>
+  <p class="body">I viewed the page source and found a Base64 comment, which decoded to an instruction: remove every phone number containing both a Fibonacci number and a prime number, and keep the rest. I confirmed the groups were ASCII codes, since one row decoded to readable text ending in <code>!</code> and <code>}</code>. I applied the rule to all rows, discarding any that held both a Fibonacci value and a prime value. Two rows survived. Decoding their numbers as ASCII, including the country-code number, and concatenating them in page order produced <code>FLAG{Nu</code> then <code>mbers!}</code>. I used a short script to fetch the page, parse the numbers, apply the filter, and decode the survivors.</p>
+</section>
+
+<section class="chal">
+  <h2><span class="badge">09</span> Teenage Mutant Jinja Turtles</h2>
+  <p class="flagline">FLAG{S4F3_T3MPL4T3}</p>
+  <h3 class="lbl">Vulnerabilities</h3>
+  <p class="body">The vulnerability is Server-Side Template Injection (SSTI) in the Jinja2 template engine. The application takes user input and renders it as a template rather than passing it as inert data, so any template expression in the input is evaluated on the server. In Jinja2 this escalates from simple expression evaluation to full remote code execution.</p>
+  <h3 class="lbl">Exploitation</h3>
+  <p class="body">I did some reconnaissance and fetched the page, which contained a form that posts a <code>userinput</code> field to the <code>/render</code> endpoint. I confirmed the injection by submitting <code>{{7*7}}</code>, which the server rendered as <code>49</code>, proving expressions are evaluated server-side. To turn this into code execution and read the file, I used the Jinja built-in global <code>lipsum</code>, whose <code>__globals__</code> attribute exposes Python's <code>os</code> module. I submitted <code>{{ lipsum.__globals__.os.popen('cat flag.txt').read() }}</code>, which ran <code>cat flag.txt</code> on the server and returned its contents in the rendered page.</p>
+</section>
+
+<section class="chal">
+  <h2><span class="badge">10</span> Shrouded in darkness</h2>
+  <p class="flagline">Flag{0bscur3}</p>
+  <h3 class="lbl">Vulnerabilities</h3>
+  <p class="body">The vulnerability is security through obscurity, a form of broken access control. The flag is served at a predictable, guessable path that is simply not linked anywhere on the site and is protected by nothing more than the assumption that nobody will find it. Since an unknown URL is not an access control, the page can be reached by anyone who requests the right path.</p>
+  <h3 class="lbl">Exploitation</h3>
+  <p class="body">The page itself contained no links, comments, or hints, and only taunted that the flag would never be found. Because there was nothing to follow, I performed file and directory enumeration, requesting a list of common paths and watching the HTTP status codes. Both <code>/flag</code> and <code>/flag.txt</code> returned status 200 instead of 404, revealing hidden pages. I then requested <code>/flag.txt</code> directly and the server returned the flag in its response body.</p>
+</section>
+
+<footer>10 / 10 challenges solved · Web Security 2026</footer>
+
+</div>
+</body>
+</html>
