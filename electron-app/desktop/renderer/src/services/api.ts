@@ -88,7 +88,9 @@ export const api = {
           role,
         }),
   resetRequest: (email: string) =>
-    desktop ? desktop.resetRequest(email) : post<boolean>('/api/auth/reset-request', { email }),
+    desktop
+      ? desktop.resetRequest(email)
+      : post<unknown>('/api/auth/reset-request', { email }).then((r) => r === true),
   resetComplete: (email: string, code: string, pw: string) =>
     desktop
       ? desktop.resetComplete(email, code, pw)

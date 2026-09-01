@@ -105,6 +105,7 @@
   "loggedInAs": "Ingelogd als",
   "loginFailPassword": "Wachtwoord onjuist.",
   "loginFailPending": "Account wacht op goedkeuring.",
+  "loginFailRateLimited": "Te veel pogingen — wacht een paar minuten en probeer het opnieuw.",
   "loginFailRejected": "Aanvraag is afgewezen.",
   "loginFailUnknown": "E-mailadres niet bekend.",
   "loginSub": "Log in met je 1828-account.",

@@ -57,7 +57,9 @@ export function Login({
     const data = new FormData(e.currentTarget);
     const result = await api.login(String(data.get('email')), String(data.get('password')));
     if (result.outcome === 'OK') onLoggedIn(result.user);
-    else setError(t(LOGIN_ERROR_KEY[result.outcome] ?? 'loginFailUnknown', lang));
+    else if ((result as { error?: string }).error === 'RATE_LIMITED')
+      setError(t('loginFailRateLimited', lang));
+    else setError(t(LOGIN_ERROR_KEY[result.outcome] ?? 'loginFailPassword', lang));
   }
 
   async function handleSignup(e: FormEvent<HTMLFormElement>): Promise<void> {

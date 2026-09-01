@@ -105,6 +105,7 @@
   "loggedInAs": "Signed in as",
   "loginFailPassword": "Wrong password.",
   "loginFailPending": "Account awaiting approval.",
+  "loginFailRateLimited": "Too many attempts — wait a few minutes and try again.",
   "loginFailRejected": "Account request was rejected.",
   "loginFailUnknown": "Email not recognised.",
   "loginSub": "Sign in with your 1828 account.",
