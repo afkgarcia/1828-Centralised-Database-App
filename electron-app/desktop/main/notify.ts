@@ -86,6 +86,21 @@ function record(db: Db, input: SendInput): void {
   void trySmtp(db, emailId, input);
 }
 
+/**
+ * Password-reset code mail — through the same record → .eml → SMTP pipeline as
+ * every other notification. (It used to be written straight into the outbox
+ * table by auth.ts and never actually sent, even with SMTP configured.)
+ */
+export function sendPasswordResetEmail(db: Db, to: string, code: string, lang: Lang = 'nl'): void {
+  record(db, {
+    event: 'PASSWORD_RESET',
+    from: 'noreply@1828.nl',
+    to: [to],
+    subject: format('subjReset', {}, lang),
+    body: `${format('mailResetIntro', {}, lang)}\n\n    ${code}\n\n${format('mailResetIgnore', {}, lang)}\n`,
+  });
+}
+
 /** RFC-822 style .eml with an RFC 2047 base64 subject (emoji-safe). */
 function writeEml(input: SendInput): void {
   if (!dataDir) return;

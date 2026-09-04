@@ -15,8 +15,8 @@ import {
   type ResetOutcome,
   type SignupOutcome,
 } from '@shared/business-logic';
-import { format } from '@shared/i18n';
 import type { Db } from './db/client';
+import { sendPasswordResetEmail } from './notify';
 import * as t from './db/schema';
 
 /**
@@ -143,20 +143,9 @@ export function requestPasswordReset(db: Db, email: string): boolean {
     db.insert(t.passwordResetCodes)
       .values({ userId: row.id, code, createdAt: new Date().toISOString() })
       .run();
-    const emailId = randomUUID();
-    db.insert(t.emails)
-      .values({
-        id: emailId,
-        event: 'PASSWORD_RESET',
-        fromEmail: 'noreply@1828.nl',
-        subject: format('subjReset', {}),
-        body: `${format('mailResetIntro', {})}\n\n    ${code}\n\n${format('mailResetIgnore', {})}\n`,
-        deliveredVia: 'outbox',
-        createdAt: new Date().toISOString(),
-      })
-      .run();
-    db.insert(t.emailRecipients).values({ emailId, recipient: row.email }).run();
   });
+  // Recorded in the outbox AND actually delivered (.eml + SMTP when configured).
+  sendPasswordResetEmail(db, row.email, code);
   return true;
 }
 
