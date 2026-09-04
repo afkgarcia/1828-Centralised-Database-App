@@ -1,6 +1,6 @@
 # 1828 Fasedocument Tracker — Progress
 
-*Last updated: 13 August 2026*
+*Last updated: 4 September 2026*
 
 ## What this project is
 
@@ -117,6 +117,22 @@ Full port completed in 7 checkpointed steps, then extended:
   resolved — highlights: `window.prompt` crashing in Electron (r4), silent
   dead UI on expired web sessions (r5), and a legacy-migration attachment wipe
   via FK cascade (r6) — each caught before any user ever hit it).
+
+## Live deployment (4 Sep 2026)
+
+- **https://fasedocument.1828.nl** — client VPS (Ubuntu 24.04, `179.198.197.19`),
+  systemd service `1828-tracker`, Caddy auto-HTTPS, nightly backups (DB + files)
+  at 03:00 under `/var/lib/1828-tracker/backups`. Deploy = rsync from this
+  repo + `npm ci` + `npm run web:build` + `systemctl restart` (DEPLOY.md).
+- **Email live** via Microsoft 365 (`tracker@1828.nl`, SMTP AUTH) — verified:
+  password-reset mail delivered `SMTP ✓`. Fixed on the way: reset codes were
+  never handed to the mail pipeline before (outbox only).
+- **Accounts**: `alessandro@garciagaspar.com` (owner, support) and
+  `ernest@1828.nl` (owner, all cities). Database starts clean — no test data.
+- **Open with the client**: rotate the `alessandro-garcia` server password +
+  disable SSH password auth (asked, unanswered); Google OAuth for Drive export
+  (optional). Note: the VPS template's unused Traefik container was stopped
+  (kept, auto-restart off) because it occupied ports 80/443.
 
 ## Current state
 
